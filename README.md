@@ -97,7 +97,22 @@ volRatio = min(총거래량 / 발행주식수, 10%)
 
 ## 테이블 구성
 
-
+| 테이블 | 주요 컬럼 |
+|--------|----------|
+| `user` | user_id, student_id, name, password, is_admin, seed_money, is_banned, seed_notify, attend_days |
+| `stock` | stock_id, ticker_name, market, sector, current_price, base_price, daily_open, total_shares, volatility, dividend_per_share, is_trading, circuit_until |
+| `price_history` | history_id, stock_id, price, recorded_at |
+| `trade_log` | trade_id, user_id, stock_id, trade_type, quantity, price, created_at |
+| `holding` | holding_id, user_id, stock_id, quantity, avg_price |
+| `order_book` | order_id, user_id, stock_id, order_type, trade_type, quantity, limit_price, execute_at, status, filled_price |
+| `announcement` | ann_id, title, content, ann_type, stock_id, created_at |
+| `dividend_log` | div_id, user_id, stock_id, amount, quantity, paid_at |
+| `attend_log` | attend_id, user_id, amount, attend_days, reason, paid_at |
+| `quiz` | quiz_id, question, opt_a~d, answer, reward, quiz_date |
+| `quiz_answer` | ans_id, user_id, quiz_id, answer, is_correct, answered_at |
+| `circuit_log` | circuit_id, stock_id, reason, triggered_at, resume_at |
+| `inquiry` | inquiry_id, student_id, name, content, is_read, created_at |
+| `stock_request` | request_id, user_id, ticker_name, market, sector, base_price, total_shares, reason, status, reject_reason |
 
 <br>
 
