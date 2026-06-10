@@ -1,0 +1,166 @@
+/* ================================================
+   BSSM Stock — 로그인 (login.html)
+   ================================================ */
+
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-box { width: 100%; max-width: 400px; }
+
+.login-logo { text-align: center; margin-bottom: 32px; }
+.login-logo-title { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; margin-bottom: 4px; }
+.login-logo-sub   { font-size: 12px; color: var(--text3); }
+
+.login-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 28px;
+}
+
+/* 탭 */
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+}
+
+.auth-tab {
+  font-size: 13px;
+  color: var(--text2);
+  text-align: center;
+  padding: 10px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: all 0.15s;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  font-family: inherit;
+}
+
+.auth-tab.active {
+  color: var(--text);
+  border-bottom-color: var(--text);
+  font-weight: 500;
+}
+
+/* 로그인 버튼 */
+.login-btn {
+  width: 100%;
+  padding: 11px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  transition: opacity 0.15s;
+  margin-top: 4px;
+}
+
+.login-btn:hover   { opacity: 0.85; }
+.login-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* 에러 메시지 */
+.err-msg {
+  font-size: 12px;
+  color: var(--up);
+  background: var(--up-bg);
+  border-radius: 6px;
+  padding: 9px 12px;
+  margin-bottom: 14px;
+  display: none;
+}
+
+.err-msg.show { display: block; }
+
+/* 하단 링크 */
+.login-sub { text-align: center; margin-top: 14px; font-size: 12px; color: var(--text3); }
+
+.login-sub button {
+  background: none;
+  border: none;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  text-decoration: underline;
+}
+
+/* 하단 티커 */
+.ticker-bg {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 32px;
+  background: var(--bg2);
+  border-top: 1px solid var(--line);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.ticker-inner {
+  display: inline-block;
+  white-space: nowrap;
+  animation: tickerMove 40s linear infinite;
+  font-size: 11px;
+  color: var(--text3);
+  padding-left: 24px;
+}
+
+@keyframes tickerMove {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-inner .up { color: var(--up); }
+.ticker-inner .dn { color: var(--dn); }
+
+/* 테마 버튼 (우측 상단 고정) */
+.theme-float {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+}
+
+/* 문의 모달 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal-box {
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  border-radius: 14px;
+  padding: 28px;
+  width: 90%;
+  max-width: 400px;
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+.modal-btns { display: flex; gap: 8px; margin-top: 18px; }

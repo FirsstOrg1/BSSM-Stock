@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BSSM Stock — 랭킹</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+<link rel="stylesheet" href="../css/common.css">
+<link rel="stylesheet" href="../css/ranking.css">
+</head>
+<body>
+<nav>
+  <div class="nav-logo">BSSM STOCK</div>
+  <div class="nav-links"><a href="index.html">전광판</a><a href="trade.html">거래소</a><a href="mypage.html">내 자산</a><a href="ranking.html" class="active">랭킹</a><a href="quiz.html">퀴즈</a><a href="announce.html">공시</a></div>
+  <div class="nav-right">
+    <span class="nav-status"><span class="nav-status-dot" id="statusDot"></span><span id="marketStatus">거래중</span></span>
+    <span class="nav-user"><strong id="navStudentId">-</strong> · <strong id="navName">-</strong></span>
+    <span class="nav-seed" id="navSeed">₩-</span>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">라이트</button>
+    <button class="btn-logout" onclick="logout()">로그아웃</button>
+  </div>
+</nav>
+<div class="page-wrap">
+  <div class="page-title">랭킹</div>
+  <div class="card">
+    <table>
+      <thead><tr>
+        <th style="width:60px">순위</th>
+        <th>아이디</th><th>이름</th>
+        <th class="r">총 자산</th>
+        <th class="r">수익률</th>
+        <th class="r">출석일</th>
+      </tr></thead>
+      <tbody id="rankBody"></tbody>
+    </table>
+  </div>
+</div>
+<script src="./js/nav.js"></script>
+<script>
+
+function toggleTheme(){
+  const h=document.documentElement;
+  const d=h.getAttribute("data-theme")==="dark";
+  h.setAttribute("data-theme",d?"light":"dark");
+  document.getElementById("themeBtn").textContent=d?"다크":"라이트";
+  localStorage.setItem("theme",d?"light":"dark");
+}
+(function(){
+  const s=localStorage.getItem("theme")||"dark";
+  document.documentElement.setAttribute("data-theme",s);
+  const b=document.getElementById("themeBtn");
+  if(b)b.textContent=s==="dark"?"라이트":"다크";
+})();
+
+async function loadRanking(){
+  try{
+    const r=await fetch(API_BASE+'/ranking');
+    const list=await r.json();
+    const body=document.getElementById('rankBody');
+    body.innerHTML='';
+    list.forEach((u,i)=>{
+      const pnl=u.total_asset-1000000;
+      const pct=((pnl/1000000)*100).toFixed(2);
+      const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td class="rank-num rank-${i+1}">${medal||String(i+1).padStart(2,'0')}</td>
+        <td style="font-family:monospace;font-size:12px;color:var(--text2)">${u.student_id}</td>
+        <td style="font-weight:500">${u.name}</td>
+        <td class="r pnl-val">${Number(u.total_asset).toLocaleString()}원</td>
+        <td class="r"><span class="pill ${pnl>=0?'up':'dn'}">${pnl>=0?'+':''}${pct}%</span></td>
+        <td class="r" style="color:var(--text3)">${u.attend_days}일</td>`;
+      body.appendChild(tr);
+    });
+  }catch(e){console.error(e);}
+}
+loadRanking();
+setInterval(loadRanking,15000);
+</script>
+</body>
+</html>

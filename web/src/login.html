@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSSM Stock — 로그인</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+<link rel="stylesheet" href="../css/common.css">
+<link rel="stylesheet" href="../css/login.css">
+</head>
+<body>
+<div class="ticker-bg"><div class="ticker-inner" id="tickerScroll">BSSM STOCK MARKET ONLINE...</div></div>
+<button class="theme-btn theme-float" onclick="toggleTheme()" id="themeBtn">라이트</button>
+
+<div class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-title">BSSM STOCK</div>
+      <div class="login-logo-sub">부산소프트웨어마이스터고등학교</div>
+    </div>
+    <div class="login-card">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">로그인</button>
+        <button class="auth-tab" id="tabRegister" onclick="switchTab('register')">회원가입</button>
+      </div>
+      <div class="err-msg" id="errMsg"></div>
+
+      <div id="formLogin">
+        <div class="form-field"><label>아이디</label><input type="text" id="loginId" placeholder="아이디 입력" maxlength="30" autocomplete="username"></div>
+        <div class="form-field"><label>비밀번호</label><input type="password" id="loginPw" placeholder="비밀번호 입력" autocomplete="current-password"></div>
+        <button class="login-btn" id="loginBtn" onclick="doLogin()">로그인</button>
+        <div class="login-sub"><button onclick="openInquiry()">관리자에게 문의</button></div>
+      </div>
+
+      <div id="formRegister" style="display:none">
+        <div class="form-field"><label>아이디</label><input type="text" id="regId" placeholder="2~30자 자유롭게" maxlength="30" autocomplete="username"><div style="font-size:11px;color:var(--text3);margin-top:4px;">예) 학번(1101), 닉네임 등</div></div>
+        <div class="form-field"><label>이름</label><input type="text" id="regName" placeholder="홍길동" maxlength="20"></div>
+        <div class="form-field"><label>비밀번호</label><input type="password" id="regPw" placeholder="4자 이상" autocomplete="new-password"></div>
+        <div class="form-field"><label>비밀번호 확인</label><input type="password" id="regPw2" placeholder="비밀번호 재입력" autocomplete="new-password"></div>
+        <button class="login-btn" id="regBtn" onclick="doRegister()">가입하기</button>
+        <div class="login-sub"><button onclick="openInquiry()">관리자에게 문의</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 문의 모달 -->
+<div class="modal-overlay" id="inquiryOverlay">
+  <div class="modal-box">
+    <div class="modal-title">관리자에게 문의</div>
+    <div class="form-field"><label>이름</label><input type="text" id="iqName" placeholder="이름"></div>
+    <div class="form-field"><label>내용</label><textarea id="iqContent" placeholder="문의 내용 (500자 이내)"></textarea></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="document.getElementById('inquiryOverlay').classList.remove('show')">취소</button>
+      <button class="btn btn-primary" onclick="submitInquiry()">보내기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:3000/api';
+let curTab = 'login';
+
+function toggleTheme(){
+  const h=document.documentElement;
+  const d=h.getAttribute("data-theme")==="dark";
+  h.setAttribute("data-theme",d?"light":"dark");
+  document.getElementById("themeBtn").textContent=d?"다크":"라이트";
+  localStorage.setItem("theme",d?"light":"dark");
+}
+(function(){
+  const s=localStorage.getItem("theme")||"dark";
+  document.documentElement.setAttribute("data-theme",s);
+  const b=document.getElementById("themeBtn");
+  if(b)b.textContent=s==="dark"?"라이트":"다크";
+})();
+
+function switchTab(t){curTab=t;document.getElementById('tabLogin').classList.toggle('active',t==='login');document.getElementById('tabRegister').classList.toggle('active',t==='register');document.getElementById('formLogin').style.display=t==='login'?'':'none';document.getElementById('formRegister').style.display=t==='register'?'':'none';hideErr();}
+function showErr(m){const e=document.getElementById('errMsg');e.textContent=m;e.classList.add('show');}
+function hideErr(){document.getElementById('errMsg').classList.remove('show');}
+function saveSession(d){sessionStorage.setItem('userId',String(d.user_id));sessionStorage.setItem('studentId',d.student_id);sessionStorage.setItem('userName',d.name);sessionStorage.setItem('isAdmin',d.is_admin?'1':'0');}
+async function doLogin(){hideErr();const id=document.getElementById('loginId').value.trim();const pw=document.getElementById('loginPw').value;const btn=document.getElementById('loginBtn');if(!id||!pw){showErr('아이디와 비밀번호를 입력해주세요.');return;}btn.disabled=true;btn.textContent='로그인 중...';try{const r=await fetch(API_BASE+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:id,password:pw})});const d=await r.json();if(!r.ok)throw new Error(d.error);saveSession(d);window.location.href=d.is_admin?'admin.html':'index.html';}catch(e){showErr(e.message||'로그인 실패');btn.disabled=false;btn.textContent='로그인';}}
+async function doRegister(){hideErr();const id=document.getElementById('regId').value.trim();const name=document.getElementById('regName').value.trim();const pw=document.getElementById('regPw').value;const pw2=document.getElementById('regPw2').value;const btn=document.getElementById('regBtn');if(!id||!name||!pw){showErr('모든 항목을 입력해주세요.');return;}if(id.length<2){showErr('아이디는 2자 이상이어야 합니다.');return;}if(pw.length<4){showErr('비밀번호는 4자 이상이어야 합니다.');return;}if(pw!==pw2){showErr('비밀번호가 일치하지 않습니다.');return;}if(id==='admin'){showErr('사용할 수 없는 아이디입니다.');return;}btn.disabled=true;btn.textContent='가입 중...';try{const r=await fetch(API_BASE+'/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:id,name,password:pw})});const d=await r.json();if(!r.ok)throw new Error(d.error);saveSession(d);window.location.href='index.html';}catch(e){showErr(e.message||'가입 실패');btn.disabled=false;btn.textContent='가입하기';}}
+function openInquiry(){document.getElementById('inquiryOverlay').classList.add('show');}
+async function submitInquiry(){const name=document.getElementById('iqName').value.trim();const content=document.getElementById('iqContent').value.trim();const sid=document.getElementById('loginId')?.value.trim()||'';if(!name||!content){alert('이름과 내용을 입력해주세요.');return;}const r=await fetch(API_BASE+'/inquiry',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:sid,name,content})});if(r.ok){document.getElementById('inquiryOverlay').classList.remove('show');document.getElementById('iqContent').value='';alert('문의가 접수되었습니다.');}}
+async function loadTicker(){try{const r=await fetch(API_BASE+'/stocks');const s=await r.json();const str=s.slice(0,12).map(x=>{const p=((x.current_price-x.base_price)/x.base_price*100);return x.ticker_name+' <span class="'+(p>=0?'up':'dn')+'">'+(p>=0?'▲':'▼')+Math.abs(p).toFixed(1)+'%</span>';}).join(' · ');document.getElementById('tickerScroll').innerHTML=str+' · '+str;}catch{}}
+loadTicker();
+document.addEventListener('keydown',e=>{if(e.key==='Enter'){if(curTab==='login')doLogin();else doRegister();}});
+document.getElementById('inquiryOverlay').addEventListener('click',e=>{if(e.target.id==='inquiryOverlay')e.target.classList.remove('show');});
+</script>
+</body>
+</html>

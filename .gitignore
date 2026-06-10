@@ -1,0 +1,17 @@
+mysql/data/
+.env
+node_modules/
+*.log
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# 에디터
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 빌드 캐시
+.npm/

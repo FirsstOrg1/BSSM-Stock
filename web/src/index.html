@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSSM Stock — 전광판</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+<link rel="stylesheet" href="../css/common.css">
+<link rel="stylesheet" href="../css/index.css">
+</head>
+<body>
+<nav>
+  <div class="nav-logo">BSSM STOCK</div>
+  <div class="nav-links">
+    <a href="index.html" class="active">전광판</a>
+    <a href="trade.html">거래소</a>
+    <a href="mypage.html">내 자산</a>
+    <a href="ranking.html">랭킹</a>
+    <a href="quiz.html">퀴즈</a>
+    <a href="announce.html">공시</a>
+  </div>
+  <div class="nav-right">
+    <span class="nav-status"><span class="nav-status-dot" id="statusDot"></span><span id="marketStatus">거래중</span></span>
+    <span class="nav-user"><strong id="navStudentId">-</strong> · <strong id="navName">-</strong></span>
+    <span class="nav-seed" id="navSeed">₩-</span>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">라이트</button>
+    <button class="btn-logout" onclick="logout()">로그아웃</button>
+  </div>
+</nav>
+
+<div class="ticker-bar">
+  <div class="ticker-inner" id="tickerScroll">-</div>
+</div>
+
+<main>
+  <div class="ann-bar hidden" id="annBanner">
+    <span class="ann-tag">공시</span>
+    <span class="ann-text" id="annText"></span>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card"><div class="stat-label">총 종목</div><div class="stat-val" id="statTotal">-</div><div class="stat-sub">상장 종목</div></div>
+    <div class="stat-card"><div class="stat-label">상승 종목</div><div class="stat-val up" id="statUp">-</div><div class="stat-sub">시작가 기준</div></div>
+    <div class="stat-card"><div class="stat-label">하락 종목</div><div class="stat-val dn" id="statDn">-</div><div class="stat-sub">시작가 기준</div></div>
+    <div class="stat-card"><div class="stat-label">총 참여자</div><div class="stat-val" id="statUsers">-</div><div class="stat-sub">명</div></div>
+    <div class="stat-card"><div class="stat-label">서킷브레이커</div><div class="stat-val" id="statCircuit">0</div><div class="stat-sub">발동 종목</div></div>
+  </div>
+
+  <div class="filter-row">
+    <button class="filter-tab active" onclick="switchMarket('ALL')">전체</button>
+    <button class="filter-tab" onclick="switchMarket('BSSM_MARKET')">BSSM MARKET <span id="cntMarket"></span></button>
+    <button class="filter-tab" onclick="switchMarket('BSSM_CLASS')">BSSM CLASS <span id="cntClass"></span></button>
+    <button class="filter-tab" onclick="switchMarket('BSSM_VENTURE')">BSSM VENTURE <span id="cntVenture"></span></button>
+    <div class="filter-right">갱신까지 <span id="countdown">5</span>초</div>
+    <button class="req-btn" id="reqBtn" onclick="openStockRequest()">+ 종목 추가 요청</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th style="width:40px">#</th>
+        <th>종목명</th>
+        <th>거래소</th>
+        <th class="r">현재가</th>
+        <th class="r">등락률</th>
+        <th class="r">변동</th>
+        <th class="r" style="width:80px">추이</th>
+        <th class="r">시작가</th>
+        <th class="r" style="width:70px"></th>
+      </tr></thead>
+      <tbody id="stockBody"></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- 종목 추가 요청 모달 -->
+<div class="req-overlay" id="reqOverlay">
+  <div class="req-box">
+    <div class="req-title">종목 추가 요청</div>
+    <div class="req-field"><label>종목명</label><input type="text" id="reqName" placeholder="예) 소프트웨어실, 영화동아리" maxlength="30"></div>
+    <div class="req-grid">
+      <div class="req-field"><label>거래소</label>
+        <select id="reqMarket">
+          <option value="BSSM_MARKET">BSSM MARKET</option>
+          <option value="BSSM_VENTURE" selected>BSSM VENTURE</option>
+          <option value="BSSM_CLASS">BSSM CLASS</option>
+        </select>
+      </div>
+      <div class="req-field"><label>섹터</label><input type="text" id="reqSector" placeholder="예) 교육, 엔터"></div>
+    </div>
+    <div class="req-grid">
+      <div class="req-field"><label>공모가</label><input type="number" id="reqPrice" placeholder="100 ~ 100,000"></div>
+      <div class="req-field"><label>발행주식수</label><input type="number" id="reqShares" placeholder="100 ~ 10,000"></div>
+    </div>
+    <div class="req-field"><label>신청 사유</label><textarea id="reqReason" placeholder="이 종목이 왜 필요한지 설명해주세요."></textarea></div>
+    <div class="req-btns">
+      <button class="req-cancel" onclick="closeStockRequest()">취소</button>
+      <button class="req-submit" onclick="submitStockRequest()">신청하기</button>
+    </div>
+    <div class="req-my-list" id="reqMyList" style="display:none">
+      <div class="req-my-label">내 요청 현황</div>
+      <div id="reqMyItems"></div>
+    </div>
+  </div>
+</div>
+
+<script src="./js/nav.js"></script>
+<script>
+const isLoggedIn = !!sessionStorage.getItem('userId');
+
+// 테마
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('themeBtn').textContent = isDark ? '다크' : '라이트';
+  localStorage.setItem('theme', isDark ? 'light' : 'dark');
+}
+(function() {
+  const saved = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('themeBtn').textContent = saved === 'dark' ? '라이트' : '다크';
+})();
+
+// 비로그인 처리
+window.addEventListener('DOMContentLoaded', () => {
+  if (!isLoggedIn) {
+    document.getElementById('navSeed').style.display = 'none';
+    document.querySelector('.btn-logout').style.display = 'none';
+    document.getElementById('navStudentId').textContent = '게스트';
+    document.getElementById('navName').parentElement.innerHTML = '<strong>게스트</strong> · <a href="login.html" style="color:var(--text2);font-size:13px;">로그인</a>';
+  }
+});
+
+function requireLogin() {
+  if (!isLoggedIn) { alert('로그인 후 이용 가능합니다.'); window.location.href='login.html'; return false; }
+  return true;
+}
+
+let allStocks = [], curMarket = 'ALL', prevPrices = {};
+const MARKET_LABEL = { BSSM_MARKET:'MARKET', BSSM_CLASS:'CLASS', BSSM_VENTURE:'VENTURE' };
+
+function switchMarket(m) {
+  curMarket = m;
+  document.querySelectorAll('.filter-tab').forEach((el, i) => {
+    el.classList.toggle('active', ['ALL','BSSM_MARKET','BSSM_CLASS','BSSM_VENTURE'][i] === m);
+  });
+  renderTable();
+}
+
+function drawMini(canvas, hist, basePrice) {
+  if (!canvas || !hist || hist.length < 2) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const mn = Math.min(...hist) * 0.998;
+  const mx = Math.max(...hist) * 1.002 || mn + 1;
+  const toX = i => (i / (hist.length - 1)) * W;
+  const toY = v => H - ((v - mn) / (mx - mn)) * H;
+  const last = hist[hist.length - 1];
+  const prev = hist.length >= 2 ? hist[hist.length - 2] : basePrice;
+  const isUp = last >= prev;
+
+  // 테마에 따라 색상
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  // 당일 시작가(base_price) 대비 현재가로 색상 결정
+  const pctFromBase = basePrice ? (last - basePrice) / basePrice : 0;
+  const isGain = pctFromBase >= 0;
+  const upClr = isDark ? '#ef4444' : '#dc2626';
+  const dnClr = isDark ? '#3b82f6' : '#2563eb';
+  const clr = isGain ? upClr : dnClr;
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.beginPath();
+  hist.forEach((v, i) => i === 0 ? ctx.moveTo(toX(0), toY(v)) : ctx.lineTo(toX(i), toY(v)));
+  ctx.strokeStyle = clr; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.beginPath(); ctx.arc(toX(hist.length-1), toY(last), 2.5, 0, Math.PI*2);
+  ctx.fillStyle = clr; ctx.fill();
+}
+
+function renderTable() {
+  const body = document.getElementById('stockBody');
+  body.innerHTML = '';
+  const list = curMarket === 'ALL' ? allStocks : allStocks.filter(s => s.market === curMarket);
+  let upCnt = 0, dnCnt = 0, circuitCnt = 0;
+
+  list.forEach((s, i) => {
+    const pct = (s.current_price - s.base_price) / s.base_price * 100;
+    const diff = s.current_price - s.base_price;
+    const prevTick = s.history?.length >= 2 ? s.history[s.history.length - 2] : s.current_price;
+    const tickPct = (s.current_price - prevTick) / (prevTick || 1) * 100;
+    if (pct > 0) upCnt++; else if (pct < 0) dnCnt++;
+    const isCircuit = s.circuit_until && new Date(s.circuit_until) > new Date();
+    if (isCircuit) circuitCnt++;
+    const pc = pct > 0 ? 'up' : pct < 0 ? 'dn' : 'flat';
+    const ps = pct > 0 ? '▲' : pct < 0 ? '▼' : '─';
+    const diffClr = diff >= 0 ? 'var(--up)' : 'var(--dn)';
+    const cid = 'mc-' + s.stock_id;
+    const tr = document.createElement('tr');
+    if (isCircuit) tr.classList.add('circuit');
+    tr.onclick = () => { if (!isCircuit) goTrade(s.stock_id, s.ticker_name); };
+    tr.innerHTML = `
+      <td style="color:var(--text3);font-size:11px;font-variant-numeric:tabular-nums">${String(i+1).padStart(2,'0')}</td>
+      <td>
+        <div class="stock-name">${s.ticker_name}${isCircuit ? ' <span class="circuit-tag">서킷</span>' : ''}</div>
+        <div class="stock-meta">${s.sector}</div>
+      </td>
+      <td><span class="market-tag">${MARKET_LABEL[s.market]}</span></td>
+      <td class="r"><span class="price-cell" id="price-${s.stock_id}">${s.current_price.toLocaleString()}원</span></td>
+      <td class="r"><span class="chg-pill ${pc}">${ps} ${Math.abs(pct).toFixed(2)}%</span></td>
+      <td class="r diff-cell" style="color:${diffClr}">${diff>=0?'+':''}${diff.toLocaleString()}원</td>
+      <td class="r"><canvas id="${cid}" width="72" height="28"></canvas></td>
+      <td class="r" style="color:var(--text3);font-size:12px;font-variant-numeric:tabular-nums">${s.base_price.toLocaleString()}원</td>
+      <td class="r">${isCircuit ? '<span style="font-size:11px;color:var(--text3)">정지중</span>' : `<button class="trade-btn" onclick="event.stopPropagation();goTrade(${s.stock_id},'${s.ticker_name}')">거래 →</button>`}</td>
+    `;
+    body.appendChild(tr);
+    requestAnimationFrame(() => drawMini(document.getElementById(cid), s.history, s.base_price));
+  });
+
+  document.getElementById('statTotal').textContent = allStocks.length;
+  document.getElementById('statUp').textContent    = upCnt;
+  document.getElementById('statDn').textContent    = dnCnt;
+  document.getElementById('statCircuit').textContent = circuitCnt;
+  document.getElementById('cntMarket').textContent  = allStocks.filter(s=>s.market==='BSSM_MARKET').length;
+  document.getElementById('cntClass').textContent   = allStocks.filter(s=>s.market==='BSSM_CLASS').length;
+  document.getElementById('cntVenture').textContent = allStocks.filter(s=>s.market==='BSSM_VENTURE').length;
+}
+
+function flashChanged() {
+  allStocks.forEach(s => {
+    const prev = prevPrices[s.stock_id];
+    if (prev !== undefined && prev !== s.current_price) {
+      const el = document.getElementById('price-' + s.stock_id);
+      if (!el) return;
+      el.classList.remove('flash-up','flash-dn'); void el.offsetWidth;
+      el.classList.add(s.current_price > prev ? 'flash-up' : 'flash-dn');
+      setTimeout(() => el.classList.remove('flash-up','flash-dn'), 500);
+    }
+    prevPrices[s.stock_id] = s.current_price;
+  });
+}
+
+function renderTicker() {
+  const str = allStocks.map(s => {
+    const pct = (s.current_price - s.base_price) / s.base_price * 100;
+    const cls = pct >= 0 ? 'up' : 'dn';
+    return `${s.ticker_name} <span class="${cls}">${s.current_price.toLocaleString()} ${pct>=0?'▲':'▼'}${Math.abs(pct).toFixed(1)}%</span>`;
+  }).join('<span class="ticker-sep">·</span>');
+  document.getElementById('tickerScroll').innerHTML = str + '<span class="ticker-sep">·</span>' + str;
+}
+
+function goTrade(id, name) {
+  if (!requireLogin()) return;
+  sessionStorage.setItem('tradeStockId', String(id));
+  sessionStorage.setItem('tradeStockName', name);
+  window.location.href = 'trade.html';
+}
+
+async function fetchStocks() {
+  try {
+    const res = await fetch(API_BASE + '/stocks');
+    allStocks = await res.json();
+    flashChanged();
+    renderTable();
+    renderTicker();
+  } catch {}
+}
+
+async function fetchUsers() {
+  try {
+    const res = await fetch(API_BASE + '/users/count');
+    const d   = await res.json();
+    document.getElementById('statUsers').textContent = d.count;
+  } catch {}
+}
+
+async function fetchAnnouncements() {
+  try {
+    const res  = await fetch(API_BASE + '/announcements');
+    const list = await res.json();
+    if (list.length > 0) {
+      document.getElementById('annText').textContent = list[0].title + ' — ' + list[0].content;
+      document.getElementById('annBanner').classList.remove('hidden');
+    }
+  } catch {}
+}
+
+async function checkMarketClosed() {
+  try {
+    const res  = await fetch(API_BASE + '/market/status');
+    const data = await res.json();
+    const dot  = document.getElementById('statusDot');
+    const txt  = document.getElementById('marketStatus');
+    if (data.isOpen) {
+      dot.style.background = '#22c55e';
+      txt.textContent = '거래중';
+    } else {
+      dot.style.background = '#ef4444';
+      txt.textContent = data.holidays?.[0]?.name || '휴장';
+    }
+  } catch {}
+}
+
+// 종목 요청
+function openStockRequest() {
+  if (!requireLogin()) return;
+  document.getElementById('reqOverlay').classList.add('show');
+  loadMyRequests();
+}
+function closeStockRequest() {
+  document.getElementById('reqOverlay').classList.remove('show');
+}
+async function loadMyRequests() {
+  const uid = sessionStorage.getItem('userId');
+  if (!uid) return;
+  try {
+    const res  = await fetch(API_BASE + '/stock-request/my/' + uid);
+    const list = await res.json();
+    const wrap = document.getElementById('reqMyList');
+    const items = document.getElementById('reqMyItems');
+    if (!list.length) { wrap.style.display = 'none'; return; }
+    wrap.style.display = '';
+    items.innerHTML = list.map(r => {
+      const lbl = { PENDING:'검토 중', APPROVED:'승인됨', REJECTED:'거절됨' }[r.status];
+      return `<div class="req-item"><div class="req-item-name">${r.ticker_name}</div><div class="req-item-status ri-${r.status}">${lbl}${r.reject_reason ? ' — ' + r.reject_reason : ''}</div></div>`;
+    }).join('');
+  } catch {}
+}
+async function submitStockRequest() {
+  const uid    = sessionStorage.getItem('userId');
+  const name   = document.getElementById('reqName').value.trim();
+  const market = document.getElementById('reqMarket').value;
+  const sector = document.getElementById('reqSector').value.trim();
+  const price  = parseInt(document.getElementById('reqPrice').value);
+  const shares = parseInt(document.getElementById('reqShares').value);
+  const reason = document.getElementById('reqReason').value.trim();
+  if (!name || !sector || !price || !shares || !reason) { alert('모든 항목을 입력해주세요.'); return; }
+  try {
+    const res  = await fetch(API_BASE + '/stock-request', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ user_id: Number(uid), ticker_name: name, market, sector, base_price: price, total_shares: shares, reason }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    alert('요청이 접수되었습니다.');
+    ['reqName','reqSector','reqPrice','reqShares','reqReason'].forEach(id => document.getElementById(id).value = '');
+    loadMyRequests();
+  } catch (e) { alert('오류: ' + e.message); }
+}
+document.getElementById('reqOverlay').addEventListener('click', e => {
+  if (e.target.id === 'reqOverlay') closeStockRequest();
+});
+
+// 폴링
+let pollSec = 5;
+setInterval(() => {
+  pollSec--;
+  document.getElementById('countdown').textContent = pollSec;
+  if (pollSec <= 0) { fetchStocks(); pollSec = 5; }
+}, 1000);
+
+fetchStocks();
+fetchUsers();
+fetchAnnouncements();
+checkMarketClosed();
+setInterval(fetchUsers, 15000);
+setInterval(fetchAnnouncements, 30000);
+setInterval(checkMarketClosed, 60000);
+</script>
+</body>
+</html>

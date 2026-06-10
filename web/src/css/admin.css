@@ -1,0 +1,95 @@
+/* ================================================
+   BSSM Stock — 관리자 (admin.html)
+   ================================================ */
+
+.admin-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+
+.admin-tab {
+  font-size: 13px;
+  color: var(--text2);
+  padding: 10px 18px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  margin-bottom: -1px;
+  transition: all 0.15s;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  font-family: inherit;
+}
+
+.admin-tab:hover { color: var(--text); }
+.admin-tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+
+.section         { display: none; }
+.section.active  { display: block; }
+
+.panel {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 22px;
+  margin-bottom: 16px;
+}
+
+.panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-title small {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 400;
+  letter-spacing: 0.3px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stat-box {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.stat-box-label { font-size: 11px; color: var(--text3); font-weight: 500; margin-bottom: 6px; }
+.stat-box-val   { font-size: 20px; font-weight: 700; color: var(--text); }
+
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* 토스트 알림 */
+.toast-admin {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  border-left: 3px solid #22c55e;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 13px;
+  z-index: 9999;
+  display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+.toast-admin.show { display: block; }
+.toast-admin.err  { border-left-color: var(--up); }

@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  mysql:
+    build:
+      context: .
+      dockerfile: mysql/Dockerfile
+    container_name: bssm-mysql
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+    networks:
+      - bssm-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pq1w2e3"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: bssm-api
+    ports:
+      - "3000:3000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    environment:
+      DB_HOST:          mysql
+      DB_PORT:          3306
+      DB_USER:          root
+      DB_PASSWORD:      q1w2e3
+      DB_NAME:          study
+      NEIS_API_KEY:     2c8af733841b46b3932d9cdaeec0c1fc
+      NEIS_SCHOOL_CODE: "7150658"
+      NEIS_OFFICE_CODE: C10
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - bssm-network
+    restart: on-failure
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    container_name: bssm-web
+    ports:
+      - "70:80"
+    depends_on:
+      - api
+    networks:
+      - bssm-network
+
+networks:
+  bssm-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "true"

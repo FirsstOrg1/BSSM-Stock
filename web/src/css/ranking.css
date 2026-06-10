@@ -1,0 +1,10 @@
+/* ================================================
+    BSSM Stock — 랭킹 (ranking.html)
+   ================================================ */
+
+.rank-num { font-size: 13px; font-weight: 700; color: var(--text3); font-variant-numeric: tabular-nums; }
+.rank-1   { color: var(--text); }
+.rank-2   { color: var(--text2); }
+.rank-3   { color: var(--text2); }
+.medal    { font-size: 16px; }
+.pnl-val  { font-weight: 600; font-variant-numeric: tabular-nums; }

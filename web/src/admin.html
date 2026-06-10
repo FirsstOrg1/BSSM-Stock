@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BSSM Stock — 관리자</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+<link rel="stylesheet" href="../css/common.css">
+<link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+<nav>
+  <div class="nav-logo">BSSM STOCK</div>
+  <div style="font-size:11px;color:var(--up);border:1px solid rgba(239,68,68,0.3);border-radius:4px;padding:2px 8px;letter-spacing:1px;font-weight:500;">ADMIN</div>
+  <div class="nav-right">
+    <span class="nav-status"><span class="nav-status-dot" id="statusDot"></span><span id="marketStatus">거래중</span></span>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">라이트</button>
+    <a href="index.html" class="btn" style="font-size:12px;padding:5px 12px;text-decoration:none;">← 전광판</a>
+    <button class="btn-logout" onclick="logout()">로그아웃</button>
+  </div>
+</nav>
+
+<div class="toast-admin" id="adminToast"></div>
+
+<div class="page-wrap">
+  <div class="admin-tabs">
+    <button class="admin-tab active" onclick="switchTab('market')">시장 관리</button>
+    <button class="admin-tab" onclick="switchTab('stocks')">종목 관리</button>
+    <button class="admin-tab" onclick="switchTab('users')">유저 관리</button>
+    <button class="admin-tab" onclick="switchTab('announce')">공시 작성</button>
+    <button class="admin-tab" onclick="switchTab('quiz')">퀴즈 관리</button>
+    <button class="admin-tab" onclick="switchTab('stockreq')">종목 요청 <span id="stockReqBadge" style="display:none;font-size:10px;background:var(--up-bg);color:var(--up);border-radius:10px;padding:1px 6px;margin-left:4px;"></span></button>
+    <button class="admin-tab" onclick="switchTab('inquiry')">문의 <span id="inquiryBadge" style="display:none;font-size:10px;background:var(--dn-bg);color:var(--dn);border-radius:10px;padding:1px 6px;margin-left:4px;"></span></button>
+    <button class="admin-tab" onclick="switchTab('stats')">통계</button>
+  </div>
+
+  <!-- 시장 관리 -->
+  <div class="section active" id="sec-market">
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-box-label">시장 상태</div><div class="stat-box-val" id="mktState">-</div></div>
+      <div class="stat-box"><div class="stat-box-label">총 종목</div><div class="stat-box-val" id="mktStocks">-</div></div>
+      <div class="stat-box"><div class="stat-box-label">총 유저</div><div class="stat-box-val" id="mktUsers">-</div></div>
+      <div class="stat-box"><div class="stat-box-label">서킷 종목</div><div class="stat-box-val" id="mktCircuit">0</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">시장 제어 <small>MARKET CONTROL</small></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="marketControl('open')">강제 개장</button>
+        <button class="btn btn-danger" onclick="marketControl('close')">강제 휴장</button>
+        <button class="btn" onclick="marketControl('reset_forced')">자동 모드 복귀</button>
+        <button class="btn" onclick="marketControl('reset_circuit')">서킷 전체 해제</button>
+        <button class="btn" onclick="resetDailyOpen()">시가 갱신</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 종목 관리 -->
+  <div class="section" id="sec-stocks">
+    <div class="panel">
+      <div class="panel-title">종목 목록</div>
+      <table>
+        <thead><tr>
+          <th>종목명</th><th>거래소</th><th class="r">현재가</th>
+          <th class="r">시작가</th><th>상태</th><th>서킷</th><th class="r">조작</th>
+        </tr></thead>
+        <tbody id="stockTableBody"></tbody>
+      </table>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="panel">
+        <div class="panel-title">가격 직접 조정</div>
+        <div class="form-field"><label>종목 선택</label><select id="adjStockId"></select></div>
+        <div class="form-field"><label>새 가격 (원)</label><input type="number" id="adjPrice" placeholder="예) 5000"></div>
+        <button class="btn btn-primary" onclick="adjustPrice()">가격 조정</button>
+      </div>
+      <div class="panel">
+        <div class="panel-title">배당금 즉시 지급</div>
+        <div class="form-field"><label>종목 선택</label><select id="divStockId"><option value="all">전체 배당 종목</option></select></div>
+        <button class="btn btn-primary" onclick="payDividendNow()">배당금 지급</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 유저 관리 -->
+  <div class="section" id="sec-users">
+    <div class="panel">
+      <div class="panel-title">유저 목록</div>
+      <div style="margin-bottom:14px;">
+        <input type="text" id="userSearch" placeholder="아이디 또는 이름 검색" oninput="filterUsers()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:7px;padding:8px 12px;font-family:inherit;font-size:13px;color:var(--text);outline:none;width:240px;">
+      </div>
+      <table>
+        <thead><tr>
+          <th>아이디</th><th>이름</th><th class="r">잔액</th>
+          <th class="r">총자산</th><th class="r">출석</th><th>상태</th><th class="r">조작</th>
+        </tr></thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <div class="panel-title">시드머니 조정</div>
+      <div class="form-grid">
+        <div class="form-field"><label>유저 아이디</label><input type="text" id="seedUserId" placeholder="아이디 입력"></div>
+        <div class="form-field"><label>금액 (양수=지급, 음수=차감)</label><input type="number" id="seedAmount" placeholder="예) 10000"></div>
+        <div class="form-field"><label>사유</label><input type="text" id="seedReason" placeholder="예) 이벤트 보상"></div>
+      </div>
+      <button class="btn btn-primary" onclick="adjustSeed()">시드머니 조정</button>
+    </div>
+  </div>
+
+  <!-- 공시 작성 -->
+  <div class="section" id="sec-announce">
+    <div class="panel">
+      <div class="panel-title">공시 작성</div>
+      <div class="form-field"><label>제목</label><input type="text" id="annTitle" placeholder="공시 제목"></div>
+      <div class="form-grid">
+        <div class="form-field"><label>유형</label>
+          <select id="annType">
+            <option value="EVENT">EVENT</option>
+            <option value="SYSTEM">SYSTEM</option>
+            <option value="DIVIDEND">DIVIDEND</option>
+            <option value="CIRCUIT">CIRCUIT</option>
+            <option value="QUIZ">QUIZ</option>
+          </select>
+        </div>
+        <div class="form-field"><label>관련 종목 (선택)</label><select id="annStockId"><option value="">전체 공시</option></select></div>
+      </div>
+      <div class="form-field"><label>내용</label><textarea id="annContent" placeholder="공시 내용"></textarea></div>
+      <div id="annEventAdj" style="display:none;">
+        <div class="form-grid">
+          <div class="form-field"><label>보정 방향</label>
+            <select id="adjDirection"><option value="up">▲ 상승</option><option value="dn">▼ 하락</option></select>
+          </div>
+          <div class="form-field"><label>보정률 (%)</label><input type="number" id="adjPct" placeholder="예) 10" min="1" max="15"></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="postAnnouncement()">공시 발행</button>
+        <button class="btn" onclick="toggleEventAdj()">이벤트 보정 추가</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">최근 공시</div>
+      <div id="annList"></div>
+    </div>
+  </div>
+
+  <!-- 퀴즈 관리 -->
+  <div class="section" id="sec-quiz">
+    <div class="panel">
+      <div class="panel-title">퀴즈 등록</div>
+      <div class="form-grid">
+        <div class="form-field"><label>날짜</label><input type="date" id="quizDate"></div>
+        <div class="form-field"><label>보상 (원)</label><input type="number" id="quizReward" value="3000"></div>
+      </div>
+      <div class="form-field"><label>문제</label><input type="text" id="quizQuestion" placeholder="퀴즈 문제"></div>
+      <div class="form-grid">
+        <div class="form-field"><label>보기 A</label><input type="text" id="quizA"></div>
+        <div class="form-field"><label>보기 B</label><input type="text" id="quizB"></div>
+        <div class="form-field"><label>보기 C</label><input type="text" id="quizC"></div>
+        <div class="form-field"><label>보기 D</label><input type="text" id="quizD"></div>
+      </div>
+      <div class="form-field"><label>정답</label>
+        <select id="quizAnswer"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
+      </div>
+      <button class="btn btn-primary" onclick="registerQuiz()">퀴즈 등록</button>
+    </div>
+    <div class="panel">
+      <div class="panel-title">등록된 퀴즈</div>
+      <div id="quizList"></div>
+    </div>
+  </div>
+
+  <!-- 종목 요청 -->
+  <div class="section" id="sec-stockreq">
+    <div class="panel">
+      <div class="panel-title">종목 추가 요청</div>
+      <div id="stockReqList"><div style="font-size:13px;color:var(--text3)">불러오는 중...</div></div>
+    </div>
+  </div>
+
+  <!-- 문의 -->
+  <div class="section" id="sec-inquiry">
+    <div class="panel">
+      <div class="panel-title">문의 목록</div>
+      <div id="inquiryList"><div style="font-size:13px;color:var(--text3)">불러오는 중...</div></div>
+    </div>
+  </div>
+
+  <!-- 통계 -->
+  <div class="section" id="sec-stats">
+    <div class="panel">
+      <div class="panel-title">수익률 랭킹</div>
+      <table>
+        <thead><tr>
+          <th>#</th><th>아이디</th><th>이름</th>
+          <th class="r">총자산</th><th class="r">수익률</th><th class="r">출석</th>
+        </tr></thead>
+        <tbody id="statsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="./js/nav.js"></script>
+<script>
+function toggleTheme(){const h=document.documentElement;const d=h.getAttribute("data-theme")==="dark";h.setAttribute("data-theme",d?"light":"dark");document.getElementById("themeBtn").textContent=d?"다크":"라이트";localStorage.setItem("theme",d?"light":"dark");}
+(function(){const s=localStorage.getItem("theme")||"dark";document.documentElement.setAttribute("data-theme",s);const b=document.getElementById("themeBtn");if(b)b.textContent=s==="dark"?"라이트":"다크";})();
+
+const isAdminUser=sessionStorage.getItem('isAdmin')==='1';
+if(!userId||!isAdminUser){alert('관리자만 접근 가능합니다.');window.location.href='index.html';}
+
+function toast(msg,isErr=false){const el=document.getElementById('adminToast');el.textContent=msg;el.className='toast-admin show'+(isErr?' err':'');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),3000);}
+function logout(){sessionStorage.clear();window.location.href='login.html';}
+
+const TABS=['market','stocks','users','announce','quiz','stockreq','inquiry','stats'];
+function switchTab(tab){
+  document.querySelectorAll('.admin-tab').forEach((el,i)=>el.classList.toggle('active',TABS[i]===tab));
+  document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
+  document.getElementById('sec-'+tab).classList.add('active');
+  if(tab==='stocks')loadStocks();
+  if(tab==='users')loadUsers();
+  if(tab==='announce'){loadAnnouncements();loadStockOptions();}
+  if(tab==='quiz')loadQuizList();
+  if(tab==='stockreq')loadStockRequests();
+  if(tab==='inquiry')loadInquiries();
+  if(tab==='stats')loadStats();
+}
+
+async function checkAdmin(req,res){return true;}
+
+async function loadMarketStats(){
+  try{
+    const [sr,ur,st]=await Promise.all([fetch(API_BASE+'/stocks'),fetch(API_BASE+'/users/count'),fetch(API_BASE+'/market/status')]);
+    const stocks=await sr.json(),users=await ur.json(),status=await st.json();
+    document.getElementById('mktState').textContent=status.isOpen?'개장':'휴장';
+    document.getElementById('mktState').style.color=status.isOpen?'#22c55e':'var(--up)';
+    document.getElementById('mktStocks').textContent=stocks.length;
+    document.getElementById('mktUsers').textContent=users.count;
+    const circuit=stocks.filter(s=>s.circuit_until&&new Date(s.circuit_until)>new Date()).length;
+    document.getElementById('mktCircuit').textContent=circuit;
+    const dot=document.getElementById('statusDot'),txt=document.getElementById('marketStatus');
+    if(dot)dot.style.background=status.isOpen?'#22c55e':'#ef4444';
+    if(txt)txt.textContent=status.isOpen?'거래중':'휴장';
+  }catch(e){console.error(e);}
+}
+
+async function marketControl(action){
+  try{
+    const r=await fetch(API_BASE+'/admin/market',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,admin_id:Number(userId)})});
+    const d=await r.json();if(!r.ok)throw new Error(d.error);
+    toast('✓ '+d.message);loadMarketStats();
+  }catch(e){toast(e.message,true);}
+}
+
+async function resetDailyOpen(){
+  try{
+    const r=await fetch(API_BASE+'/admin/reset-daily-open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_id:Number(userId)})});
+    if(r.ok)toast('✓ 시가 갱신 완료');
+  }catch(e){toast(e.message,true);}
+}
+
+let allStocks=[];
+async function loadStocks(){
+  try{
+    const r=await fetch(API_BASE+'/stocks');allStocks=await r.json();
+    const tbody=document.getElementById('stockTableBody');tbody.innerHTML='';
+    const adj=document.getElementById('adjStockId');const div=document.getElementById('divStockId');
+    adj.innerHTML='';div.innerHTML='<option value="all">전체 배당 종목</option>';
+    allStocks.forEach(s=>{
+      const isC=s.circuit_until&&new Date(s.circuit_until)>new Date();
+      const tr=document.createElement('tr');
+      tr.innerHTML='<td style="font-weight:500">'+s.ticker_name+'</td>'
+        +'<td><span class="badge">'+s.market.replace('BSSM_','')+'</span></td>'
+        +'<td class="r">'+Number(s.current_price).toLocaleString()+'원</td>'
+        +'<td class="r" style="color:var(--text3)">'+Number(s.base_price).toLocaleString()+'원</td>'
+        +'<td>'+(s.is_trading?'<span class="badge green">거래중</span>':'<span class="badge red">정지</span>')+'</td>'
+        +'<td>'+(isC?'<span class="badge red">서킷</span>':'<span class="badge">정상</span>')+'</td>'
+        +'<td class="r" style="display:flex;gap:6px;justify-content:flex-end;">'
+          +'<button class="btn" style="font-size:11px;padding:4px 10px" onclick="toggleTrade('+s.stock_id+','+s.is_trading+')">'+(s.is_trading?'정지':'재개')+'</button>'
+          +(isC?'<button class="btn" style="font-size:11px;padding:4px 10px" onclick="clearCircuit('+s.stock_id+')">서킷해제</button>':'')
+        +'</td>';
+      tbody.appendChild(tr);
+      adj.innerHTML+='<option value="'+s.stock_id+'">'+s.ticker_name+'</option>';
+      if(s.dividend_per_share>0)div.innerHTML+='<option value="'+s.stock_id+'">'+s.ticker_name+' (주당 '+s.dividend_per_share+'원)</option>';
+    });
+  }catch(e){console.error(e);}
+}
+
+async function toggleTrade(id,is){
+  try{
+    const r=await fetch(API_BASE+'/admin/stock/trade',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({stock_id:id,is_trading:!is,admin_id:Number(userId)})});
+    if(r.ok){toast('✓ 거래 상태 변경');loadStocks();}
+  }catch(e){toast(e.message,true);}
+}
+
+async function clearCircuit(id){
+  try{
+    const r=await fetch(API_BASE+'/admin/stock/circuit',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({stock_id:id,admin_id:Number(userId)})});
+    if(r.ok){toast('✓ 서킷 해제');loadStocks();}
+  }catch(e){toast(e.message,true);}
+}
+
+async function adjustPrice(){
+  const id=document.getElementById('adjStockId').value;
+  const price=parseInt(document.getElementById('adjPrice').value);
+  if(!price||price<=0){toast('가격을 입력하세요',true);return;}
+  try{
+    const r=await fetch(API_BASE+'/admin/stock/price',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({stock_id:Number(id),price,admin_id:Number(userId)})});
+    if(r.ok){toast('✓ 가격 조정 완료');loadStocks();}
+  }catch(e){toast(e.message,true);}
+}
+
+async function payDividendNow(){
+  const id=document.getElementById('divStockId').value;
+  try{
+    const r=await fetch(API_BASE+'/admin/dividend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({stock_id:id==='all'?null:Number(id),admin_id:Number(userId)})});
+    const d=await r.json();if(!r.ok)throw new Error(d.error);
+    toast('✓ 배당금 지급 완료: '+d.count+'명');
+  }catch(e){toast(e.message,true);}
+}
+
+let allUsers=[];
+async function loadUsers(){
+  try{
+    const r=await fetch(API_BASE+'/admin/users',{headers:{'X-Admin-Id':userId}});
+    allUsers=await r.json();renderUsers(allUsers);
+  }catch(e){console.error(e);}
+}
+
+function filterUsers(){
+  const q=document.getElementById('userSearch').value.toLowerCase();
+  renderUsers(allUsers.filter(u=>u.student_id.toLowerCase().includes(q)||u.name.toLowerCase().includes(q)));
+}
+
+function renderUsers(users){
+  const tbody=document.getElementById('userTableBody');tbody.innerHTML='';
+  users.forEach(u=>{
+    if(u.student_id==='admin')return;
+    const pnl=u.total_asset-1000000;const pct=((pnl/1000000)*100).toFixed(1);
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td style="font-family:monospace;font-size:12px">'+u.student_id+'</td>'
+      +'<td style="font-weight:500">'+u.name+'</td>'
+      +'<td class="r">'+Number(u.seed_money).toLocaleString()+'원</td>'
+      +'<td class="r"><span class="'+(pnl>=0?'up':'dn')+'">'+Number(u.total_asset).toLocaleString()+'원</span></td>'
+      +'<td class="r" style="color:var(--text3)">'+u.attend_days+'일</td>'
+      +'<td>'+(u.is_banned?'<span class="badge red">정지</span>':'<span class="badge green">정상</span>')+'</td>'
+      +'<td class="r"><button class="btn" style="font-size:11px;padding:4px 10px" onclick="banUser('+u.user_id+','+u.is_banned+')">'+(u.is_banned?'해제':'정지')+'</button></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+async function adjustSeed(){
+  const sid=document.getElementById('seedUserId').value.trim();
+  const amount=parseInt(document.getElementById('seedAmount').value);
+  const reason=document.getElementById('seedReason').value.trim()||'관리자 조정';
+  if(!sid||!amount){toast('아이디와 금액을 입력하세요',true);return;}
+  try{
+    const r=await fetch(API_BASE+'/admin/seed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:sid,amount,reason,admin_id:Number(userId)})});
+    const d=await r.json();if(!r.ok)throw new Error(d.error);
+    toast('✓ 시드머니 조정 완료');loadUsers();
+  }catch(e){toast(e.message,true);}
+}
+
+async function banUser(uid,banned){
+  try{
+    const r=await fetch(API_BASE+'/admin/ban',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target_id:uid,ban:!banned,admin_id:Number(userId)})});
+    if(r.ok){toast('✓ 계정 상태 변경');loadUsers();}
+  }catch(e){toast(e.message,true);}
+}
+
+let showAdj=false;
+function toggleEventAdj(){showAdj=!showAdj;document.getElementById('annEventAdj').style.display=showAdj?'':'none';}
+
+async function loadStockOptions(){
+  if(!allStocks.length){const r=await fetch(API_BASE+'/stocks');allStocks=await r.json();}
+  const sel=document.getElementById('annStockId');sel.innerHTML='<option value="">전체 공시</option>';
+  allStocks.forEach(s=>sel.innerHTML+='<option value="'+s.stock_id+'">'+s.ticker_name+'</option>');
+}
+
+async function postAnnouncement(){
+  const title=document.getElementById('annTitle').value.trim();
+  const content=document.getElementById('annContent').value.trim();
+  const type=document.getElementById('annType').value;
+  const stockId=document.getElementById('annStockId').value;
+  if(!title||!content){toast('제목과 내용을 입력하세요',true);return;}
+  const body={title,content,ann_type:type,stock_id:stockId?Number(stockId):null,admin_id:Number(userId)};
+  if(showAdj&&stockId){body.adj_pct=parseInt(document.getElementById('adjPct').value)||0;body.adj_dir=document.getElementById('adjDirection').value;}
+  try{
+    const r=await fetch(API_BASE+'/admin/announce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();if(!r.ok)throw new Error(d.error);
+    toast('✓ 공시 발행 완료');
+    document.getElementById('annTitle').value='';document.getElementById('annContent').value='';
+    loadAnnouncements();
+  }catch(e){toast(e.message,true);}
+}
+
+async function loadAnnouncements(){
+  try{
+    const r=await fetch(API_BASE+'/announcements');const list=await r.json();
+    const el=document.getElementById('annList');
+    el.innerHTML=list.slice(0,8).map(a=>{
+      const t=new Date(a.created_at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+      return '<div style="padding:10px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;font-size:13px;">'
+        +'<span class="badge">'+a.ann_type+'</span>'
+        +'<span style="flex:1">'+a.title+'</span>'
+        +'<span style="font-size:11px;color:var(--text3)">'+t+'</span></div>';
+    }).join('')||'<div style="font-size:13px;color:var(--text3);padding:16px 0">공시 없음</div>';
+  }catch(e){console.error(e);}
+}
+
+async function registerQuiz(){
+  const date=document.getElementById('quizDate').value;
+  const question=document.getElementById('quizQuestion').value.trim();
+  const a=document.getElementById('quizA').value.trim();const b=document.getElementById('quizB').value.trim();
+  const c=document.getElementById('quizC').value.trim();const d=document.getElementById('quizD').value.trim();
+  const answer=document.getElementById('quizAnswer').value;
+  const reward=parseInt(document.getElementById('quizReward').value)||3000;
+  if(!date||!question||!a||!b||!c||!d){toast('모든 항목을 입력하세요',true);return;}
+  try{
+    const r=await fetch(API_BASE+'/admin/quiz',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({quiz_date:date,question,opt_a:a,opt_b:b,opt_c:c,opt_d:d,answer,reward,admin_id:Number(userId)})});
+    const dd=await r.json();if(!r.ok)throw new Error(dd.error);
+    toast('✓ 퀴즈 등록 완료');loadQuizList();
+  }catch(e){toast(e.message,true);}
+}
+
+async function loadQuizList(){
+  try{
+    const r=await fetch(API_BASE+'/admin/quizzes',{headers:{'X-Admin-Id':userId}});
+    const list=await r.json();const el=document.getElementById('quizList');
+    if(!list.length){el.innerHTML='<div style="font-size:13px;color:var(--text3)">등록된 퀴즈 없음</div>';return;}
+    el.innerHTML='<table style="width:100%;border-collapse:collapse"><thead><tr>'
+      +'<th style="font-size:11px;color:var(--text3);padding:8px 0;text-align:left;border-bottom:1px solid var(--line)">날짜</th>'
+      +'<th style="font-size:11px;color:var(--text3);padding:8px 0;text-align:left;border-bottom:1px solid var(--line)">문제</th>'
+      +'<th style="font-size:11px;color:var(--text3);padding:8px 0;text-align:right;border-bottom:1px solid var(--line)">보상</th>'
+      +'<th style="font-size:11px;color:var(--text3);padding:8px 0;text-align:right;border-bottom:1px solid var(--line)">정답</th>'
+      +'</tr></thead><tbody>'
+      +list.map(q=>'<tr style="border-bottom:1px solid var(--line)">'
+        +'<td style="padding:10px 0;font-family:monospace;font-size:12px;color:var(--text2)">'+q.quiz_date+'</td>'
+        +'<td style="padding:10px 0;font-size:13px">'+q.question+'</td>'
+        +'<td style="padding:10px 0;text-align:right;font-size:12px">'+q.reward.toLocaleString()+'원</td>'
+        +'<td style="padding:10px 0;text-align:right"><span class="badge green">'+q.answer+'</span></td>'
+        +'</tr>').join('')
+      +'</tbody></table>';
+  }catch(e){console.error(e);}
+}
+
+async function loadStockRequests(){
+  try{
+    const r=await fetch(API_BASE+'/admin/stock-requests',{headers:{'X-Admin-Id':userId}});
+    const list=await r.json();
+    const el=document.getElementById('stockReqList');
+    const pending=list.filter(r=>r.status==='PENDING').length;
+    const badge=document.getElementById('stockReqBadge');
+    if(pending>0){badge.textContent=pending;badge.style.display='';}else badge.style.display='none';
+    if(!list.length){el.innerHTML='<div style="font-size:13px;color:var(--text3)">요청 없음</div>';return;}
+    el.innerHTML='';
+    list.forEach(req=>{
+      const stClr={PENDING:'var(--text2)',APPROVED:'#22c55e',REJECTED:'var(--up)'}[req.status];
+      const stLbl={PENDING:'검토 중',APPROVED:'승인됨',REJECTED:'거절됨'}[req.status];
+      const div=document.createElement('div');
+      div.style.cssText='padding:16px;background:var(--bg3);border-radius:10px;margin-bottom:10px;';
+      div.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+        +'<div style="flex:1"><strong style="font-size:14px">'+req.ticker_name+'</strong>'
+        +' <span class="badge">'+req.market.replace('BSSM_','')+'</span></div>'
+        +'<span style="font-size:12px;font-weight:600;color:'+stClr+'">'+stLbl+'</span></div>'
+        +'<div style="font-size:12px;color:var(--text2);margin-bottom:6px">섹터: '+req.sector+' · 공모가: '+Number(req.base_price).toLocaleString()+'원 · 발행: '+Number(req.total_shares).toLocaleString()+'주</div>'
+        +'<div style="font-size:12px;color:var(--text3);margin-bottom:6px">신청자: '+req.user_name+' ('+req.student_id+')</div>'
+        +'<div style="font-size:13px;color:var(--text);margin-bottom:10px;padding:10px;background:var(--bg2);border-radius:7px;">'+req.reason+'</div>'
+        +(req.status==='PENDING'?
+          '<div style="display:flex;gap:8px;">'
+          +'<button class="btn btn-primary" style="font-size:12px" onclick="approveStock('+req.request_id+')">승인 (즉시 상장)</button>'
+          +'<input type="text" id="rj_'+req.request_id+'" placeholder="거절 사유" style="flex:1;background:var(--bg2);border:1px solid var(--line2);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text);outline:none;font-family:inherit;">'
+          +'<button class="btn btn-danger" style="font-size:12px" onclick="rejectStock('+req.request_id+')">거절</button>'
+          +'</div>':'');
+      el.appendChild(div);
+    });
+  }catch(e){console.error(e);}
+}
+
+async function approveStock(id){
+  if(!confirm('승인하면 즉시 상장됩니다.'))return;
+  try{
+    const r=await fetch(API_BASE+'/admin/stock-request/'+id+'/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_id:Number(userId)})});
+    const d=await r.json();if(!r.ok)throw new Error(d.error);
+    toast('✓ 승인 완료 — 즉시 상장');loadStockRequests();loadMarketStats();
+  }catch(e){toast(e.message,true);}
+}
+
+async function rejectStock(id){
+  const reason=document.getElementById('rj_'+id)?.value.trim()||'관리자 거절';
+  try{
+    const r=await fetch(API_BASE+'/admin/stock-request/'+id+'/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_id:Number(userId),reject_reason:reason})});
+    if(r.ok){toast('✓ 거절 완료');loadStockRequests();}
+  }catch(e){toast(e.message,true);}
+}
+
+async function loadInquiries(){
+  try{
+    const r=await fetch(API_BASE+'/admin/inquiries',{headers:{'X-Admin-Id':userId}});
+    const list=await r.json();
+    const el=document.getElementById('inquiryList');
+    const unread=list.filter(i=>!i.is_read).length;
+    const badge=document.getElementById('inquiryBadge');
+    if(unread>0){badge.textContent=unread;badge.style.display='';}else badge.style.display='none';
+    if(!list.length){el.innerHTML='<div style="font-size:13px;color:var(--text3)">문의 없음</div>';return;}
+    el.innerHTML='';
+    list.forEach(iq=>{
+      const t=new Date(iq.created_at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+      const div=document.createElement('div');
+      div.style.cssText='padding:14px;background:'+(iq.is_read?'var(--bg3)':'var(--bg2)')+';border:1px solid '+(iq.is_read?'var(--line)':'var(--line2)')+';border-radius:10px;margin-bottom:8px;';
+      div.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'
+        +(!iq.is_read?'<span style="width:6px;height:6px;border-radius:50%;background:var(--dn);flex-shrink:0;display:inline-block;"></span>':'')
+        +'<strong>'+iq.name+'</strong>'
+        +'<span style="font-size:11px;color:var(--text3)">'+iq.student_id+'</span>'
+        +'<span style="margin-left:auto;font-size:11px;color:var(--text3)">'+t+'</span>'
+        +(!iq.is_read?'<button class="btn" style="font-size:11px;padding:3px 8px" onclick="markRead('+iq.inquiry_id+')">읽음</button>':'')
+        +'</div>'
+        +'<div style="font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap">'+iq.content+'</div>';
+      el.appendChild(div);
+    });
+  }catch(e){console.error(e);}
+}
+
+async function markRead(id){
+  try{
+    await fetch(API_BASE+'/admin/inquiries/'+id+'/read',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_id:Number(userId)})});
+    loadInquiries();
+  }catch{}
+}
+
+async function loadStats(){
+  try{
+    const r=await fetch(API_BASE+'/ranking');const list=await r.json();
+    const tbody=document.getElementById('statsBody');
+    tbody.innerHTML=list.map((u,i)=>{
+      const pnl=u.total_asset-1000000;const pct=((pnl/1000000)*100).toFixed(2);
+      return '<tr><td style="color:var(--text3);font-size:12px">'+String(i+1).padStart(2,'0')+'</td>'
+        +'<td style="font-family:monospace;font-size:12px;color:var(--text2)">'+u.student_id+'</td>'
+        +'<td style="font-weight:500">'+u.name+'</td>'
+        +'<td class="r">'+Number(u.total_asset).toLocaleString()+'원</td>'
+        +'<td class="r"><span class="pill '+(pnl>=0?'up':'dn')+'">'+(pnl>=0?'+':'')+pct+'%</span></td>'
+        +'<td class="r" style="color:var(--text3)">'+u.attend_days+'일</td></tr>';
+    }).join('');
+  }catch(e){console.error(e);}
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('quizDate').value=new Date().toISOString().slice(0,10);
+  loadMarketStats();
+  loadInquiries();
+  loadStockRequests();
+  setInterval(loadMarketStats,15000);
+});
+</script>
+</body>
+</html>

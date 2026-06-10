@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSSM Stock — 거래소</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+<link rel="stylesheet" href="../css/common.css">
+<link rel="stylesheet" href="../css/trade.css">
+</head>
+<body>
+<nav>
+  <div class="nav-logo">BSSM STOCK</div>
+  <div class="nav-links">
+    <a href="index.html">전광판</a>
+    <a href="trade.html" class="active">거래소</a>
+    <a href="mypage.html">내 자산</a>
+    <a href="ranking.html">랭킹</a>
+    <a href="quiz.html">퀴즈</a>
+    <a href="announce.html">공시</a>
+  </div>
+  <div class="nav-right">
+    <span class="nav-status"><span class="nav-status-dot" id="statusDot"></span><span id="marketStatus">거래중</span></span>
+    <span class="nav-user"><strong id="navStudentId">-</strong> · <strong id="navName">-</strong></span>
+    <span class="nav-seed" id="navSeed">₩-</span>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">라이트</button>
+    <button class="btn-logout" onclick="logout()">로그아웃</button>
+  </div>
+</nav>
+
+<div class="trade-root">
+  <!-- 왼쪽: 종목 목록 -->
+  <div class="stock-panel">
+    <div class="stock-panel-top">
+      <input class="stock-search" type="text" placeholder="종목 검색..." id="stockSearch" oninput="renderStockList()">
+      <div class="stock-cats">
+        <button class="stock-cat active" onclick="setCat(this,'ALL')">전체</button>
+        <button class="stock-cat" onclick="setCat(this,'BSSM_MARKET')">MARKET</button>
+        <button class="stock-cat" onclick="setCat(this,'BSSM_CLASS')">CLASS</button>
+        <button class="stock-cat" onclick="setCat(this,'BSSM_VENTURE')">VENTURE</button>
+      </div>
+    </div>
+    <div class="stock-list" id="stockList"></div>
+  </div>
+
+  <!-- 오른쪽: 차트 + 거래 -->
+  <div class="main-panel">
+
+    <!-- 종목 헤더 -->
+    <div class="stock-header">
+      <div class="stock-header-left">
+        <div class="stock-header-name" id="stockName">종목 선택</div>
+        <div class="stock-header-meta" id="stockMkt">-</div>
+      </div>
+      <div class="stock-header-right">
+        <div class="stock-header-price" id="stockPrice">-</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+          <span class="pill" id="stockChg">-</span>
+          <span class="stock-header-sub" id="stockDiff">-</span>
+          <span class="stock-header-sub" id="stockBase">시작가 -</span>
+          <span class="stock-header-sub" id="stockVol">발행 -주</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 차트 영역 -->
+    <div class="chart-section">
+      <div class="chart-controls">
+        <div class="chart-legend">
+          <span style="color:rgba(253,186,116,0.9)">── MA5</span>
+          <span style="color:rgba(167,139,250,0.9)">── MA15</span>
+        </div>
+        <div class="chart-info" id="chartInfo">최근 25틱</div>
+      </div>
+      <canvas id="priceChart" style="width:100%;height:100%;display:block;cursor:crosshair;"></canvas>
+      <!-- 호가 오버레이 -->
+      <div class="price-axis" id="priceAxis"></div>
+    </div>
+
+    <div class="trade-divider"></div>
+    <!-- 거래 + 예약 영역 -->
+    <div class="trade-section">
+
+      <!-- 즉시 거래 패널 -->
+      <div class="trade-panel">
+        <div class="trade-tabs">
+          <button class="trade-tab buy active" onclick="switchTab('buy')">매수</button>
+          <button class="trade-tab sell" onclick="switchTab('sell')">매도</button>
+        </div>
+        <div class="trade-body">
+          <div class="trade-row">
+            <div class="trade-label">현재가</div>
+            <div class="trade-value" id="t-price">-</div>
+          </div>
+          <div class="trade-row">
+            <div class="trade-label">보유 수량</div>
+            <div class="trade-value" id="t-holding">0주</div>
+          </div>
+          <div class="t-field">
+            <div class="t-label-row">
+              <span class="t-label">수량</span>
+              <span class="t-label" id="t-max-info"></span>
+            </div>
+            <input type="number" class="t-input" id="tradeQty" value="0" min="0" oninput="updateTotal()">
+            <div class="t-qty-btns" id="qtyBtns">
+              <button class="t-qty-btn" onclick="addQty(5)">+5</button>
+              <button class="t-qty-btn" onclick="addQty(10)">+10</button>
+              <button class="t-qty-btn" onclick="addQty(20)">+20</button>
+              <button class="t-qty-btn" onclick="setQtyMax()">최대</button>
+            </div>
+          </div>
+          <div class="trade-summary">
+            <div class="trade-summary-row">
+              <span>예상 금액</span>
+              <span id="tradeTotal" style="font-weight:600">₩0</span>
+            </div>
+            <div class="trade-summary-row">
+              <span>잔액</span>
+              <span id="t-cash">₩-</span>
+            </div>
+          </div>
+          <button class="trade-btn buy" id="tradeBtn" onclick="executeTrade()">매수</button>
+        </div>
+      </div>
+
+      <!-- 예약 주문 패널 -->
+      <div class="order-panel">
+        <div class="order-panel-header">
+          <span class="order-panel-title">예약 주문</span>
+          <div class="order-type-tabs">
+            <button class="order-type-tab active" id="otLIMIT" onclick="switchOrderType('LIMIT')">지정가</button>
+            <button class="order-type-tab" id="otTIME" onclick="switchOrderType('TIME')">시간예약</button>
+          </div>
+        </div>
+        <div class="order-panel-body">
+          <!-- 지정가 -->
+          <div id="limitInputs">
+            <div class="price-guide buy-guide" id="buyPriceGuide">
+              <span>▲ 매수 희망가</span>
+              <span id="limitBuyGuide" class="price-guide-val">현재가 입력</span>
+            </div>
+            <div class="price-guide sell-guide" id="sellPriceGuide" style="display:none">
+              <span>▼ 매도 희망가</span>
+              <span id="limitSellGuide" class="price-guide-val">현재가 입력</span>
+            </div>
+            <div class="t-field">
+              <div class="t-label">희망가 (원)</div>
+              <input type="number" class="t-input" id="limitPrice" placeholder="예) 4000" oninput="updateLimitGuide()">
+            </div>
+          </div>
+          <!-- 시간예약 -->
+          <div id="timeInputs" style="display:none">
+            <div class="t-field">
+              <div class="t-label">예약 시각</div>
+              <input type="datetime-local" class="t-input" id="executeAt">
+            </div>
+          </div>
+          <div class="t-field">
+            <div class="t-label">수량 (주)</div>
+            <input type="number" class="t-input" id="orderQty" value="1" min="1">
+          </div>
+          <button class="order-submit-btn buy" id="orderSubmit" onclick="submitOrder()">▲ 매수 희망가 등록</button>
+
+          <!-- 예약 현황 -->
+          <div class="pending-header">
+            <span class="t-label" style="margin:0">예약 현황</span>
+            <span class="pending-badge" id="pendingCount"></span>
+          </div>
+          <div class="pending-list" id="pendingList">
+            <div class="no-orders">예약 없음</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 종목 추가 요청 모달 -->
+<div class="req-overlay" id="reqOverlay">
+  <div class="req-box">
+    <div class="req-title">종목 추가 요청</div>
+    <div class="form-field"><label>종목명</label><input type="text" id="reqName" placeholder="예) 소프트웨어실" maxlength="30"></div>
+    <div class="form-grid">
+      <div class="form-field"><label>거래소</label>
+        <select id="reqMarket">
+          <option value="BSSM_MARKET">BSSM MARKET</option>
+          <option value="BSSM_VENTURE" selected>BSSM VENTURE</option>
+          <option value="BSSM_CLASS">BSSM CLASS</option>
+        </select>
+      </div>
+      <div class="form-field"><label>섹터</label><input type="text" id="reqSector" placeholder="예) 교육, 엔터"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>공모가</label><input type="number" id="reqPrice" placeholder="100~100,000"></div>
+      <div class="form-field"><label>발행주식수</label><input type="number" id="reqShares" placeholder="100~10,000"></div>
+    </div>
+    <div class="form-field"><label>신청 사유</label><textarea id="reqReason" placeholder="이 종목이 왜 필요한지 설명해주세요."></textarea></div>
+    <div class="req-btns">
+      <button class="btn" onclick="closeStockRequest()">취소</button>
+      <button class="btn btn-primary" onclick="submitStockRequest()">신청하기</button>
+    </div>
+    <div id="reqMyList" style="display:none;margin-top:18px;border-top:1px solid var(--line);padding-top:14px;">
+      <div style="font-size:11px;color:var(--text3);font-weight:500;margin-bottom:10px;">내 요청 현황</div>
+      <div id="reqMyItems"></div>
+    </div>
+  </div>
+</div>
+
+<script src="./js/nav.js"></script>
+<script>
+function toggleTheme(){const h=document.documentElement;const d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');localStorage.setItem('theme',d?'light':'dark');const b=document.getElementById('themeBtn');if(b)b.textContent=d?'다크':'라이트';if(STOCKS.length)renderStockList();}
+(function(){const s=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',s);const b=document.getElementById('themeBtn');if(b)b.textContent=s==='dark'?'라이트':'다크';})();
+
+let STOCKS=[], curStockId=null, curTab='buy', curOrderType='LIMIT', curCat='ALL';
+let curHolding=0, curCash=0, curMarketHeld=0;
+
+// ── 종목 목록 ─────────────────────────────────
+function setCat(el, cat){
+  curCat=cat;
+  document.querySelectorAll('.stock-cat').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderStockList();
+}
+
+function renderStockList(){
+  const q=(document.getElementById('stockSearch')?.value||'').toLowerCase();
+  const body=document.getElementById('stockList');
+  if(!body)return;
+  body.innerHTML='';
+  const filtered=STOCKS.filter(s=>{
+    if(curCat!=='ALL'&&s.market!==curCat)return false;
+    if(q&&!s.ticker_name.toLowerCase().includes(q))return false;
+    return true;
+  });
+  filtered.forEach(s=>{
+    const pct=((s.current_price-s.base_price)/s.base_price*100);
+    const isUp=pct>=0;
+    const div=document.createElement('div');
+    div.className='stock-list-item'+(s.stock_id===curStockId?' active':'');
+    div.onclick=()=>selectStock(s.stock_id);
+    div.innerHTML=
+      '<div class="sli-left">'
+        +'<div class="sli-name">'+s.ticker_name+'</div>'
+        +'<div class="sli-mkt">'+s.market.replace('BSSM_','')+'</div>'
+      +'</div>'
+      +'<div class="sli-right">'
+        +'<div class="sli-price '+(isUp?'up':'dn')+'">'+s.current_price.toLocaleString()+'</div>'
+        +'<div class="sli-chg '+(isUp?'up':'dn')+'">'+(isUp?'▲':'▼')+Math.abs(pct).toFixed(1)+'%</div>'
+      +'</div>';
+    body.appendChild(div);
+  });
+}
+
+// ── 종목 선택 ─────────────────────────────────
+async function selectStock(id){
+  curStockId=id;
+  const s=STOCKS.find(x=>x.stock_id===id);
+  if(!s)return;
+  sessionStorage.setItem('tradeStockId',String(id));
+  sessionStorage.setItem('tradeStockName',s.ticker_name);
+
+  const pct=((s.current_price-s.base_price)/s.base_price*100);
+  const diff=s.current_price-s.base_price;
+  const isUp=pct>=0;
+
+  document.getElementById('stockName').textContent=s.ticker_name;
+  document.getElementById('stockMkt').textContent=s.market.replace('BSSM_','')+' · '+s.sector;
+  const prEl=document.getElementById('stockPrice');
+  prEl.textContent=s.current_price.toLocaleString()+'원';
+  prEl.className='stock-header-price '+(isUp?'up':'dn');
+  document.getElementById('stockChg').textContent=(isUp?'▲':'▼')+Math.abs(pct).toFixed(2)+'%';
+  document.getElementById('stockChg').className='pill '+(isUp?'up':'dn');
+  document.getElementById('stockDiff').textContent=(diff>=0?'+':'')+diff.toLocaleString()+'원';
+  document.getElementById('stockDiff').style.color=isUp?'var(--up)':'var(--dn)';
+  document.getElementById('stockBase').textContent='시작가 '+s.base_price.toLocaleString()+'원';
+  document.getElementById('stockVol').textContent='발행 '+s.total_shares.toLocaleString()+'주';
+  document.getElementById('t-price').textContent=s.current_price.toLocaleString()+'원';
+
+  drawChart(s);
+  updateTotal();
+  updateLimitGuide();
+  renderStockList();
+  loadOrders();
+  loadHolding(id);
+}
+
+// ── 차트 (인터랙티브) ────────────────────────
+let chartState = { s: null, hist: [], PAD: {}, mn:0, mx:0, W:0, H:0 };
+
+function getChartGeometry(canvas, hist){
+  const W=canvas.width, H=canvas.height;
+  const PAD={t:20,b:36,l:8,r:72};
+  const mn=Math.min(...hist)*0.997, mx=Math.max(...hist)*1.003||mn+1;
+  const toX=i=>PAD.l+(i/(hist.length-1||1))*(W-PAD.l-PAD.r);
+  const toY=v=>PAD.t+(1-(v-mn)/(mx-mn))*(H-PAD.t-PAD.b);
+  return {W,H,PAD,mn,mx,toX,toY};
+}
+
+function drawChartBase(canvas, s, hist){
+  const W=canvas.offsetWidth||700;
+  const H=canvas.offsetHeight||260;
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  const {PAD,mn,mx,toX,toY}=getChartGeometry(canvas,hist);
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const upC=isDark?'#ef4444':'#dc2626';
+  const dnC=isDark?'#3b82f6':'#2563eb';
+  const gridC=isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.05)';
+  const textC=isDark?'rgba(255,255,255,0.28)':'rgba(0,0,0,0.28)';
+
+  ctx.clearRect(0,0,W,H);
+
+  // 그리드 + Y축 레이블
+  for(let i=0;i<=4;i++){
+    const v=mn+(mx-mn)*(1-i/4);
+    const y=toY(v);
+    ctx.strokeStyle=gridC; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(W-PAD.r,y); ctx.stroke();
+    ctx.fillStyle=textC; ctx.font='10px monospace'; ctx.textAlign='left';
+    ctx.fillText(Math.round(v).toLocaleString(),W-PAD.r+6,y+4);
+  }
+
+  // 시작가 기준선
+  if(s.base_price>=mn&&s.base_price<=mx){
+    const baseY=toY(s.base_price);
+    ctx.strokeStyle=isDark?'rgba(255,255,255,0.12)':'rgba(0,0,0,0.12)';
+    ctx.lineWidth=1; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(PAD.l,baseY); ctx.lineTo(W-PAD.r,baseY); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle=textC; ctx.font='9px monospace'; ctx.textAlign='left';
+    ctx.fillText('시작',W-PAD.r+6,baseY-3);
+  }
+
+  // 면적
+  const last=hist[hist.length-1];
+  const isGain=last>=s.base_price;
+  ctx.beginPath();
+  hist.forEach((v,i)=>i===0?ctx.moveTo(toX(0),toY(v)):ctx.lineTo(toX(i),toY(v)));
+  ctx.lineTo(toX(hist.length-1),H-PAD.b);
+  ctx.lineTo(toX(0),H-PAD.b);
+  ctx.closePath();
+  ctx.fillStyle=isGain?'rgba(239,68,68,0.05)':'rgba(59,130,246,0.05)';
+  ctx.fill();
+
+  // 구간별 라인
+  for(let i=1;i<hist.length;i++){
+    const segUp=hist[i]>=hist[i-1];
+    ctx.beginPath();
+    ctx.moveTo(toX(i-1),toY(hist[i-1]));
+    ctx.lineTo(toX(i),toY(hist[i]));
+    ctx.strokeStyle=segUp?upC:dnC;
+    ctx.lineWidth=2; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.stroke();
+  }
+
+  // MA선
+  function drawMA(period,color){
+    if(hist.length<period)return;
+    ctx.beginPath(); let st=false;
+    for(let i=period-1;i<hist.length;i++){
+      const avg=hist.slice(i-period+1,i+1).reduce((a,b)=>a+b,0)/period;
+      const x=toX(i),y=toY(avg);
+      if(!st){ctx.moveTo(x,y);st=true;}else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle=color; ctx.lineWidth=1.5;
+    ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+    const la=hist.slice(-period).reduce((a,b)=>a+b,0)/period;
+    ctx.fillStyle=color; ctx.font='9px monospace'; ctx.textAlign='left';
+    ctx.globalAlpha=0.8;
+    ctx.fillText('MA'+period,W-PAD.r+6,toY(la)+4);
+    ctx.globalAlpha=1;
+  }
+  drawMA(5,'rgba(253,186,116,0.85)');
+  drawMA(15,'rgba(167,139,250,0.85)');
+
+  // 현재가 점 (깜빡이는 원)
+  const lastX=toX(hist.length-1),lastY=toY(last);
+  const dotC=isGain?upC:dnC;
+  ctx.beginPath(); ctx.arc(lastX,lastY,4,0,Math.PI*2);
+  ctx.fillStyle=dotC; ctx.fill();
+  ctx.beginPath(); ctx.arc(lastX,lastY,8,0,Math.PI*2);
+  ctx.fillStyle=dotC+'22'; ctx.fill();
+
+  // X축
+  ctx.fillStyle=textC; ctx.font='9px monospace'; ctx.textAlign='center';
+  const xStep=Math.max(1,Math.floor(hist.length/5));
+  for(let i=0;i<hist.length;i+=xStep){
+    if(i===hist.length-1)continue;
+    ctx.fillText('T-'+(hist.length-1-i),toX(i),H-PAD.b+14);
+  }
+  ctx.fillText('현재',toX(hist.length-1),H-PAD.b+14);
+
+  // 상태 저장
+  chartState={s,hist,PAD,mn,mx,W,H};
+}
+
+function drawChart(s){
+  const canvas=document.getElementById('priceChart');
+  if(!canvas)return;
+  const hist=s.history&&s.history.length>1?s.history:[s.base_price,s.current_price];
+  const W=canvas.parentElement?.clientWidth||700;
+  const H=canvas.parentElement?.clientHeight||260;
+  if(W>0&&H>0){canvas.width=W;canvas.height=H;}
+  drawChartBase(canvas,s,hist);
+  setupChartHover(canvas,hist,s);
+}
+
+// ── 차트 호버 ────────────────────────────────
+let _hoverHist=[], _hoverS=null, _hoverCanvas=null;
+
+function setupChartHover(canvas, hist, s){
+  _hoverHist=hist; _hoverS=s; _hoverCanvas=canvas;
+
+  // 이미 등록됐으면 스킵 (함수 참조로 교체)
+  canvas._onmove = function(e){
+    if(!_hoverHist.length)return;
+    const rect=canvas.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(canvas.width/rect.width);
+    const {PAD,toX,toY,W,H}=getChartGeometry(canvas,_hoverHist);
+    const rawIdx=(mx-PAD.l)/(W-PAD.l-PAD.r)*(_hoverHist.length-1);
+    const idx=Math.max(0,Math.min(_hoverHist.length-1,Math.round(rawIdx)));
+
+    // 베이스 다시 그린 뒤 오버레이 추가
+    drawChartBase(canvas,_hoverS,_hoverHist);
+    drawHoverOverlay(canvas,_hoverHist,idx);
+  };
+  canvas._onleave = function(){
+    if(_hoverS&&_hoverHist.length) drawChartBase(canvas,_hoverS,_hoverHist);
+  };
+
+  canvas.onmousemove = canvas._onmove;
+  canvas.onmouseleave = canvas._onleave;
+}
+
+function drawHoverOverlay(canvas,hist,idx){
+  const ctx=canvas.getContext('2d');
+  const {PAD,toX,toY,W,H}=getChartGeometry(canvas,hist);
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const cx=toX(idx), cy=toY(hist[idx]);
+  const prev=idx>0?hist[idx-1]:hist[idx];
+  const isUp=hist[idx]>=prev;
+  const dotC=isUp?(isDark?'#ef4444':'#dc2626'):(isDark?'#3b82f6':'#2563eb');
+
+  // 십자선
+  ctx.save();
+  ctx.strokeStyle=isDark?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.2)';
+  ctx.lineWidth=1; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(cx,PAD.t); ctx.lineTo(cx,H-PAD.b); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAD.l,cy); ctx.lineTo(W-PAD.r,cy); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 호버 점
+  ctx.beginPath(); ctx.arc(cx,cy,3.5,0,Math.PI*2);
+  ctx.fillStyle=dotC; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,7,0,Math.PI*2);
+  ctx.fillStyle=dotC+'22'; ctx.fill();
+
+  // Y축 가격 레이블
+  ctx.font='10px monospace'; ctx.textAlign='left'; ctx.fillStyle=dotC;
+  ctx.fillText(hist[idx].toLocaleString(),W-PAD.r+6,cy+4);
+
+  // 툴팁
+  const diff=hist[idx]-prev;
+  const pct=prev?diff/prev*100:0;
+  const lines=[
+    hist[idx].toLocaleString()+'원',
+    (diff>=0?'+':'')+diff.toLocaleString()+'원  ('+(pct>=0?'+':'')+pct.toFixed(2)+'%)',
+    'T-'+(hist.length-1-idx),
+  ];
+  const boxW=172, boxH=62, pad=10;
+  let bx=cx+14, by=cy-boxH-10;
+  if(bx+boxW>W-PAD.r)bx=cx-boxW-14;
+  if(by<PAD.t)by=cy+14;
+
+  ctx.fillStyle=isDark?'rgba(24,24,27,0.95)':'rgba(248,248,250,0.95)';
+  ctx.strokeStyle=isDark?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.1)';
+  ctx.lineWidth=1;
+  ctx.beginPath(); ctx.roundRect(bx,by,boxW,boxH,6);
+  ctx.fill(); ctx.stroke();
+
+  ctx.textAlign='left';
+  ctx.font='bold 13px Pretendard,sans-serif';
+  ctx.fillStyle=isDark?'#f4f4f5':'#18181b';
+  ctx.fillText(lines[0],bx+pad,by+18);
+  ctx.font='11px Pretendard,sans-serif';
+  ctx.fillStyle=dotC;
+  ctx.fillText(lines[1],bx+pad,by+34);
+  ctx.font='10px monospace';
+  ctx.fillStyle=isDark?'rgba(255,255,255,0.3)':'rgba(0,0,0,0.3)';
+  ctx.fillText(lines[2],bx+pad,by+52);
+  ctx.restore();
+}
+
+
+// ── 거래 ──────────────────────────────────────
+function switchTab(t){
+  curTab=t;
+  document.querySelectorAll('.trade-tab').forEach(el=>el.classList.remove('active'));
+  document.querySelector('.trade-tab.'+t).classList.add('active');
+  const btn=document.getElementById('tradeBtn');
+  btn.className='trade-btn '+t;
+  btn.textContent=t==='buy'?'매수':'매도';
+  // 수량 버튼 변경
+  const qb=document.getElementById('qtyBtns');
+  if(t==='buy'){
+    qb.innerHTML='<button class="t-qty-btn" onclick="addQty(5)">+5</button>'
+      +'<button class="t-qty-btn" onclick="addQty(10)">+10</button>'
+      +'<button class="t-qty-btn" onclick="addQty(20)">+20</button>'
+      +'<button class="t-qty-btn" onclick="setQtyMax()">최대</button>';
+  }else{
+    qb.innerHTML='<button class="t-qty-btn" onclick="setSellPct(0.25)">25%</button>'
+      +'<button class="t-qty-btn" onclick="setSellPct(0.5)">50%</button>'
+      +'<button class="t-qty-btn" onclick="setSellPct(0.75)">75%</button>'
+      +'<button class="t-qty-btn" onclick="setSellAll()">전량</button>';
+  }
+  document.getElementById('tradeQty').value=0;
+  // 예약 버튼 업데이트
+  updateOrderBtn();
+  // 희망가 가이드
+  const bg=document.getElementById('buyPriceGuide');
+  const sg=document.getElementById('sellPriceGuide');
+  if(bg)bg.style.display=t==='buy'?'':'none';
+  if(sg)sg.style.display=t==='sell'?'':'none';
+  updateTotal();
+  updateLimitGuide();
+}
+
+function addQty(n){const el=document.getElementById('tradeQty');el.value=(parseInt(el.value)||0)+n;updateTotal();}
+function setQtyMax(){
+  const s=STOCKS.find(x=>x.stock_id===curStockId);
+  if(!s)return;
+  const byMoney=Math.floor(curCash/s.current_price);
+  // 발행주식수 - 이미 보유된 수량 (admin은 제한 없음)
+  const isAdminUser=sessionStorage.getItem('isAdmin')==='1';
+  const remaining=isAdminUser?byMoney:Math.min(byMoney,Math.max(0,s.total_shares-curMarketHeld));
+  document.getElementById('tradeQty').value=remaining>0?remaining:0;
+  updateTotal();
+}
+function setSellPct(p){document.getElementById('tradeQty').value=Math.floor(curHolding*p)||0;updateTotal();}
+function setSellAll(){document.getElementById('tradeQty').value=curHolding||0;updateTotal();}
+
+function updateTotal(){
+  const s=STOCKS.find(x=>x.stock_id===curStockId);
+  const qty=parseInt(document.getElementById('tradeQty').value)||0;
+  const total=s?s.current_price*qty:0;
+  document.getElementById('tradeTotal').textContent='₩'+total.toLocaleString();
+  document.getElementById('t-cash').textContent='₩'+curCash.toLocaleString();
+}
+
+async function executeTrade(){
+  const s=STOCKS.find(x=>x.stock_id===curStockId);
+  if(!s)return;
+  const qty=parseInt(document.getElementById('tradeQty').value)||0;
+  if(qty<=0){showToast('err','오류','수량을 입력해주세요.');return;}
+  if(curTab==='buy'){
+    const s=STOCKS.find(x=>x.stock_id===curStockId);
+    const isAdm=sessionStorage.getItem('isAdmin')==='1';
+    if(s&&!isAdm&&qty>s.total_shares){showToast('err','오류','발행 주식 수 초과입니다. (최대 '+s.total_shares+'주)');return;}
+  }
+  const btn=document.getElementById('tradeBtn');
+  btn.disabled=true; const orig=btn.textContent; btn.textContent='처리 중...';
+  try{
+    const r=await fetch(API_BASE+'/trade',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user_id:Number(userId),stock_id:curStockId,trade_type:curTab.toUpperCase(),quantity:qty})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error);
+    curCash=d.seed_money;
+    document.getElementById('navSeed').textContent='₩'+Number(d.seed_money).toLocaleString();
+    document.getElementById('tradeQty').value=0;
+    showToast(curTab==='buy'?'up':'dn',curTab==='buy'?'매수 완료':'매도 완료',s.ticker_name+' '+qty+'주 · ₩'+Number(s.current_price*qty).toLocaleString());
+    loadStocks(); loadHolding(curStockId);
+  }catch(e){showToast('err','오류',e.message);}
+  finally{btn.disabled=false;btn.textContent=orig;}
+}
+
+// ── 예약 주문 ─────────────────────────────────
+function switchOrderType(t){
+  curOrderType=t;
+  document.querySelectorAll('.order-type-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('ot'+t).classList.add('active');
+  document.getElementById('limitInputs').style.display=t==='LIMIT'?'':'none';
+  document.getElementById('timeInputs').style.display=t==='TIME'?'':'none';
+}
+
+function updateOrderBtn(){
+  const btn=document.getElementById('orderSubmit');
+  if(!btn)return;
+  btn.textContent=curTab==='buy'?'▲ 매수 희망가 등록':'▼ 매도 희망가 등록';
+  btn.className='order-submit-btn '+(curTab==='buy'?'buy':'sell');
+}
+
+function updateLimitGuide(){
+  const lp=parseInt(document.getElementById('limitPrice')?.value)||0;
+  const s=STOCKS.find(x=>x.stock_id===curStockId);
+  const cur=s?s.current_price:0;
+  const buyEl=document.getElementById('limitBuyGuide');
+  const sellEl=document.getElementById('limitSellGuide');
+  if(buyEl)buyEl.textContent=lp?lp.toLocaleString()+'원 이하 체결':(cur?cur.toLocaleString()+'원 (현재가)':'-');
+  if(sellEl)sellEl.textContent=lp?lp.toLocaleString()+'원 이상 체결':(cur?cur.toLocaleString()+'원 (현재가)':'-');
+}
+
+async function submitOrder(){
+  const s=STOCKS.find(x=>x.stock_id===curStockId);
+  if(!s)return;
+  const qty=parseInt(document.getElementById('orderQty').value)||0;
+  if(qty<=0){showToast('err','오류','수량을 입력해주세요.');return;}
+  const body={user_id:Number(userId),stock_id:curStockId,trade_type:curTab.toUpperCase(),quantity:qty,order_type:curOrderType};
+  if(curOrderType==='LIMIT'){
+    const lp=parseInt(document.getElementById('limitPrice').value);
+    if(!lp){showToast('err','오류','희망가를 입력해주세요.');return;}
+    body.limit_price=lp;
+  }else{
+    const ea=document.getElementById('executeAt').value;
+    if(!ea){showToast('err','오류','예약 시각을 입력해주세요.');return;}
+    body.execute_at=ea;
+  }
+  try{
+    const r=await fetch(API_BASE+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error);
+    showToast('ok','예약 등록',s.ticker_name+' '+qty+'주 '+(curTab==='buy'?'매수':'매도'));
+    document.getElementById('limitPrice').value='';
+    document.getElementById('orderQty').value=1;
+    loadOrders();
+  }catch(e){showToast('err','오류',e.message);}
+}
+
+async function loadOrders(){
+  try{
+    const r=await fetch(API_BASE+'/orders/'+userId);
+    const orders=await r.json();
+    console.log('[loadOrders] 전체:', orders.length, '현재 종목:', curStockId, '타입:', typeof curStockId);
+    if(orders.length)console.log('[loadOrders] 샘플:', orders[0].stock_id, typeof orders[0].stock_id);
+    const list=orders.filter(o=>o.status==='PENDING'&&Number(o.stock_id)===Number(curStockId));
+    console.log('[loadOrders] 필터 후:', list.length);
+    const cnt=document.getElementById('pendingCount');
+    if(cnt)cnt.textContent=list.length>0?list.length+'건':'';
+    const el=document.getElementById('pendingList');
+    if(!list.length){el.innerHTML='<div class="no-orders">예약 없음</div>';return;}
+    el.innerHTML='';
+    list.forEach(o=>{
+      const isB=o.trade_type==='BUY';
+      const div=document.createElement('div');
+      div.className='pending-item';
+      const cond=o.limit_price
+        ?(isB?'≤ ':'≥ ')+Number(o.limit_price).toLocaleString()+'원'
+        :new Date(o.execute_at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+      div.innerHTML='<span class="pill '+(isB?'up':'dn')+'" style="font-size:10px">'+(isB?'매수':'매도')+'</span>'
+        +' '+o.quantity+'주'
+        +' <span style="color:var(--text3);font-size:11px">'+cond+'</span>'
+        +'<button class="btn" style="margin-left:auto;font-size:11px;padding:3px 8px" onclick="cancelOrder('+o.order_id+')">취소</button>';
+      el.appendChild(div);
+    });
+  }catch(e){console.error(e);}
+}
+
+async function cancelOrder(id){
+  try{
+    const r=await fetch(API_BASE+'/orders/'+id,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:Number(userId)})});
+    if(r.ok)loadOrders();
+  }catch{}
+}
+
+// ── 보유량 로드 ───────────────────────────────
+async function loadHolding(stockId){
+  try{
+    const r=await fetch(API_BASE+'/portfolio/'+userId);
+    const d=await r.json();
+    curCash=d.user.seed_money;
+    const h=d.holdings?.find(x=>Number(x.stock_id)===Number(stockId));
+    curHolding=h?h.quantity:0;
+    document.getElementById('t-holding').textContent=curHolding+'주';
+    document.getElementById('t-cash').textContent='₩'+Number(curCash).toLocaleString();
+    document.getElementById('navSeed').textContent='₩'+Number(curCash).toLocaleString();
+    // 해당 종목 전체 시장 보유량 (발행주식수 제한용)
+    const s=STOCKS.find(x=>x.stock_id===Number(stockId));
+    if(s){
+      // 전체 홀딩 합계는 서버에서 별도로 계산
+      // 여기서는 현재가 대비 total_shares로 추정
+      curMarketHeld=0; // 서버에서 확인
+    }
+    // 최대 수량 표시
+    const s2=STOCKS.find(x=>x.stock_id===Number(stockId));
+    if(s2){
+      const byMoney=Math.floor(curCash/s2.current_price);
+      const isAdm=sessionStorage.getItem('isAdmin')==='1';
+      const maxBuy=isAdm?byMoney:Math.min(byMoney,s2.total_shares);
+      const maxEl=document.getElementById('t-max-info');
+      if(maxEl)maxEl.textContent='최대 '+maxBuy+'주';
+    }
+  }catch{}
+}
+
+// ── 종목 목록 로드 ────────────────────────────
+async function loadStocks(){
+  try{
+    const r=await fetch(API_BASE+'/stocks');
+    STOCKS=await r.json();
+    renderStockList();
+    const saved=sessionStorage.getItem('tradeStockId');
+    const s=saved?STOCKS.find(x=>x.stock_id===Number(saved)):STOCKS[0];
+    if(!curStockId){
+      if(s)selectStock(s.stock_id);
+    } else {
+      // 이미 선택된 종목이면 차트만 갱신 (선택 상태 유지)
+      const cur=STOCKS.find(x=>x.stock_id===curStockId);
+      if(cur){
+        // 가격 헤더 업데이트
+        const pct=((cur.current_price-cur.base_price)/cur.base_price*100);
+        const diff=cur.current_price-cur.base_price;
+        const isUp=pct>=0;
+        const prEl=document.getElementById('stockPrice');
+        if(prEl){prEl.textContent=cur.current_price.toLocaleString()+'원';prEl.className='stock-header-price '+(isUp?'up':'dn');}
+        const chgEl=document.getElementById('stockChg');
+        if(chgEl){chgEl.textContent=(isUp?'▲':'▼')+Math.abs(pct).toFixed(2)+'%';chgEl.className='pill '+(isUp?'up':'dn');}
+        const diffEl=document.getElementById('stockDiff');
+        if(diffEl){diffEl.textContent=(diff>=0?'+':'')+diff.toLocaleString()+'원';diffEl.style.color=isUp?'var(--up)':'var(--dn)';}
+        document.getElementById('t-price').textContent=cur.current_price.toLocaleString()+'원';
+        // 차트 갱신
+        drawChart(cur);
+      }
+    }
+  }catch(e){console.error(e);}
+}
+
+// ── 종목 추가 요청 ────────────────────────────
+function openStockRequest(){
+  document.getElementById('reqOverlay').classList.add('show');
+  loadMyRequests();
+}
+function closeStockRequest(){document.getElementById('reqOverlay').classList.remove('show');}
+document.getElementById('reqOverlay').addEventListener('click',e=>{if(e.target.id==='reqOverlay')closeStockRequest();});
+
+async function loadMyRequests(){
+  try{
+    const r=await fetch(API_BASE+'/stock-request/my/'+userId);
+    const list=await r.json();
+    const wrap=document.getElementById('reqMyList');
+    const items=document.getElementById('reqMyItems');
+    if(!list.length){wrap.style.display='none';return;}
+    wrap.style.display='';
+    items.innerHTML=list.map(r=>{
+      const lbl={PENDING:'검토 중',APPROVED:'승인됨',REJECTED:'거절됨'}[r.status];
+      const clr={PENDING:'var(--text2)',APPROVED:'#22c55e',REJECTED:'var(--up)'}[r.status];
+      return '<div style="padding:8px 12px;background:var(--bg3);border-radius:7px;margin-bottom:6px;">'
+        +'<div style="font-weight:500;font-size:13px">'+r.ticker_name+'</div>'
+        +'<div style="font-size:11px;color:'+clr+'">'+lbl+(r.reject_reason?' — '+r.reject_reason:'')+'</div>'
+        +'</div>';
+    }).join('');
+  }catch{}
+}
+
+async function submitStockRequest(){
+  const name=document.getElementById('reqName').value.trim();
+  const market=document.getElementById('reqMarket').value;
+  const sector=document.getElementById('reqSector').value.trim();
+  const price=parseInt(document.getElementById('reqPrice').value);
+  const shares=parseInt(document.getElementById('reqShares').value);
+  const reason=document.getElementById('reqReason').value.trim();
+  if(!name||!sector||!price||!shares||!reason){alert('모든 항목을 입력해주세요.');return;}
+  try{
+    const r=await fetch(API_BASE+'/stock-request',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user_id:Number(userId),ticker_name:name,market,sector,base_price:price,total_shares:shares,reason})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error);
+    alert('요청이 접수되었습니다.');
+    ['reqName','reqSector','reqPrice','reqShares','reqReason'].forEach(id=>document.getElementById(id).value='');
+    loadMyRequests();
+  }catch(e){alert('오류: '+e.message);}
+}
+
+// ── 토스트 ────────────────────────────────────
+function showToast(type,title,body){
+  const old=document.getElementById('tradeToast');if(old)old.remove();
+  const t=document.createElement('div');t.id='tradeToast';
+  const clr=type==='up'?'var(--up)':type==='dn'?'var(--dn)':type==='ok'?'#22c55e':'var(--up)';
+  t.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--line2);border-left:3px solid '+clr+';border-radius:10px;padding:12px 18px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.2);';
+  t.innerHTML='<div style="font-weight:600;color:'+clr+';margin-bottom:2px;font-size:13px">'+title+'</div><div style="font-size:12px;color:var(--text2)">'+body+'</div>';
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3000);
+}
+
+// ── 초기화 ────────────────────────────────────
+window.addEventListener('resize',()=>{const s=STOCKS.find(x=>x.stock_id===curStockId);if(s){setTimeout(()=>drawChart(s),50);}});
+loadStocks();
+setInterval(()=>{loadStocks();loadOrders();if(curStockId)loadHolding(curStockId);},5000); // 5초마다 갱신
+</script>
+</body>
+</html>

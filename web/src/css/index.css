@@ -1,0 +1,372 @@
+/* ================================================
+   BSSM Stock — 전광판 (index.html)
+   ================================================ */
+
+/* ── 티커 바 ─────────────────────────────────── */
+.ticker-bar {
+  position: fixed;
+  top: 52px; left: 0; right: 0;
+  height: 32px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  z-index: 99;
+}
+
+.ticker-inner {
+  display: inline-block;
+  white-space: nowrap;
+  animation: tickerMove 50s linear infinite;
+  font-size: 11px;
+  color: var(--text2);
+  font-variant-numeric: tabular-nums;
+  padding-left: 24px;
+}
+
+@keyframes tickerMove {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-inner .up { color: var(--up); }
+.ticker-inner .dn { color: var(--dn); }
+.ticker-sep { color: var(--text3); margin: 0 14px; }
+
+/* ── 메인 ────────────────────────────────────── */
+main {
+  padding-top: 96px;
+  padding-bottom: 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/* ── 통계 카드 ──────────────────────────────── */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.stat-val {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-val.up { color: var(--up); }
+.stat-val.dn { color: var(--dn); }
+.stat-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+/* ── 공시 배너 ──────────────────────────────── */
+.ann-bar {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.ann-bar.hidden { display: none; }
+
+.ann-tag {
+  font-size: 10px;
+  color: var(--text3);
+  border: 1px solid var(--line2);
+  border-radius: 4px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.ann-text { color: var(--text2); }
+
+/* ── 필터 탭 ─────────────────────────────────── */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filter-tab {
+  font-size: 12px;
+  color: var(--text2);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.filter-tab:hover {
+  border-color: var(--line2);
+  color: var(--text);
+}
+
+.filter-tab.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  font-weight: 500;
+}
+
+.filter-right {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.req-btn {
+  font-size: 12px;
+  color: var(--text2);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.req-btn:hover {
+  border-color: var(--line2);
+  color: var(--text);
+}
+
+/* ── 테이블 래퍼 ─────────────────────────────── */
+.table-wrap {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ── 종목 셀 ─────────────────────────────────── */
+.stock-name {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.stock-meta {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.market-tag {
+  font-size: 10px;
+  color: var(--text3);
+  border: 1px solid var(--line2);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.price-cell {
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s;
+}
+
+.price-cell.flash-up { color: var(--up) !important; }
+.price-cell.flash-dn { color: var(--dn) !important; }
+
+.chg-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+
+.chg-pill.up   { background: var(--up-bg); color: var(--up); }
+.chg-pill.dn   { background: var(--dn-bg); color: var(--dn); }
+.chg-pill.flat { background: var(--bg3);   color: var(--text3); }
+
+.diff-cell {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.trade-btn {
+  font-size: 11px;
+  color: var(--text2);
+  background: none;
+  border: 1px solid var(--line2);
+  border-radius: 5px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.trade-btn:hover {
+  border-color: var(--text);
+  color: var(--text);
+}
+
+.circuit-tag {
+  font-size: 10px;
+  color: var(--up);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
+/* ── 종목 추가 요청 모달 ─────────────────────── */
+.req-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.req-overlay.show { display: flex; }
+
+.req-box {
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  border-radius: 14px;
+  padding: 28px;
+  width: 90%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.req-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+.req-field { margin-bottom: 14px; }
+
+.req-field label {
+  display: block;
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 500;
+  margin-bottom: 5px;
+  letter-spacing: 0.3px;
+}
+
+.req-field input,
+.req-field select,
+.req-field textarea {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--line2);
+  border-radius: 7px;
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.req-field input:focus,
+.req-field select:focus,
+.req-field textarea:focus { border-color: var(--text2); }
+
+.req-field textarea { resize: vertical; min-height: 80px; }
+.req-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.req-btns { display: flex; gap: 8px; margin-top: 18px; }
+
+.req-submit {
+  flex: 1;
+  padding: 10px;
+  background: var(--text);
+  border: none;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bg);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.req-submit:hover { opacity: 0.85; }
+
+.req-cancel {
+  padding: 10px 18px;
+  background: none;
+  border: 1px solid var(--line2);
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.req-cancel:hover { border-color: var(--text2); color: var(--text); }
+
+.req-my-list {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.req-my-label {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  margin-bottom: 10px;
+}
+
+.req-item {
+  padding: 10px 12px;
+  background: var(--bg3);
+  border-radius: 7px;
+  margin-bottom: 6px;
+}
+
+.req-item-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.req-item-status { font-size: 11px; }
+.ri-PENDING  { color: var(--text2); }
+.ri-APPROVED { color: #22c55e; }
+.ri-REJECTED { color: var(--up); }

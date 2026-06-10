@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BSSM Stock — 퀴즈</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+<link rel="stylesheet" href="../css/common.css">
+<link rel="stylesheet" href="../css/quiz.css">
+</head>
+<body>
+<nav>
+  <div class="nav-logo">BSSM STOCK</div>
+  <div class="nav-links"><a href="index.html">전광판</a><a href="trade.html">거래소</a><a href="mypage.html">내 자산</a><a href="ranking.html">랭킹</a><a href="quiz.html" class="active">퀴즈</a><a href="announce.html">공시</a></div>
+  <div class="nav-right">
+    <span class="nav-status"><span class="nav-status-dot" id="statusDot"></span><span id="marketStatus">거래중</span></span>
+    <span class="nav-user"><strong id="navStudentId">-</strong> · <strong id="navName">-</strong></span>
+    <span class="nav-seed" id="navSeed">₩-</span>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">라이트</button>
+    <button class="btn-logout" onclick="logout()">로그아웃</button>
+  </div>
+</nav>
+<div class="page-wrap">
+  <div class="page-title">출석 보너스 & 퀴즈</div>
+  <div class="two-col">
+    <div class="card" style="padding:18px 20px;">
+      <div class="section-label">출석 현황</div>
+      <div style="font-size:24px;font-weight:600;margin:8px 0;" id="attendDays">0<span style="font-size:14px;font-weight:400;color:var(--text2)"> 일</span></div>
+      <div class="attend-bar"><div class="attend-fill" id="attendFill" style="width:0%"></div></div>
+      <div class="milestone-row">
+        <span class="milestone" data-day="10">10일 +5천</span>
+        <span class="milestone" data-day="30">30일 +2만</span>
+        <span class="milestone" data-day="50">50일 +5만</span>
+        <span class="milestone" data-day="100">100일 +10만</span>
+      </div>
+    </div>
+    <div class="card" style="padding:18px 20px;">
+      <div class="section-label">보너스 안내</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text2)">매일 출석</span><span>+1,000원</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text2)">10일 달성</span><span>+5,000원</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text2)">30일 달성</span><span>+20,000원</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text2)">50일 달성</span><span>+50,000원</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text2)">100일 달성</span><span>+100,000원</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="padding:20px 22px;" id="quizCard">
+    <div style="font-size:13px;color:var(--text3)">퀴즈 불러오는 중...</div>
+  </div>
+</div>
+<script src="./js/nav.js"></script>
+<script>
+
+function toggleTheme(){
+  const h=document.documentElement;
+  const d=h.getAttribute("data-theme")==="dark";
+  h.setAttribute("data-theme",d?"light":"dark");
+  document.getElementById("themeBtn").textContent=d?"다크":"라이트";
+  localStorage.setItem("theme",d?"light":"dark");
+}
+(function(){
+  const s=localStorage.getItem("theme")||"dark";
+  document.documentElement.setAttribute("data-theme",s);
+  const b=document.getElementById("themeBtn");
+  if(b)b.textContent=s==="dark"?"라이트":"다크";
+})();
+
+
+let quizData=null;
+async function loadPortfolio(){
+  try{
+    const r=await fetch(API_BASE+'/portfolio/'+userId);
+    const d=await r.json();
+    const days=d.user.attend_days||0;
+    document.getElementById('attendDays').innerHTML=days+'<span style="font-size:14px;font-weight:400;color:var(--text2)"> 일</span>';
+    document.getElementById('attendFill').style.width=Math.min(100,(days%100))+'%';
+    document.querySelectorAll('.milestone').forEach(el=>{
+      if(days>=parseInt(el.dataset.day))el.classList.add('reached');
+    });
+  }catch{}
+}
+async function loadQuiz(){
+  const card=document.getElementById('quizCard');
+  try{
+    const r=await fetch(API_BASE+'/quiz/today');
+    const d=await r.json();
+    if(!d||!d.quiz){
+      card.innerHTML='<div style="font-size:13px;color:var(--text3)">오늘의 퀴즈가 아직 준비되지 않았습니다.</div>';
+      return;
+    }
+    quizData=d.quiz;
+    card.innerHTML='';
+
+    const hdr=document.createElement('div');
+    hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;';
+    const lbl=document.createElement('div');
+    lbl.className='section-label'; lbl.style.marginBottom='0';
+    lbl.textContent='오늘의 퀴즈 · 하루 1회';
+    const rwd=document.createElement('span');
+    rwd.style.cssText='font-size:12px;color:var(--text2)';
+    rwd.textContent='정답 시 +'+d.quiz.reward.toLocaleString()+'원';
+    hdr.appendChild(lbl); hdr.appendChild(rwd); card.appendChild(hdr);
+
+    const qEl=document.createElement('div');
+    qEl.className='quiz-q'; qEl.textContent=d.quiz.question;
+    card.appendChild(qEl);
+
+    const optList=document.createElement('div');
+    optList.className='opt-list'; optList.id='optList';
+    [
+      {k:'A',t:d.quiz.opt_a},
+      {k:'B',t:d.quiz.opt_b},
+      {k:'C',t:d.quiz.opt_c},
+      {k:'D',t:d.quiz.opt_d}
+    ].forEach(function(o){
+      const btn=document.createElement('button');
+      btn.className='opt-btn';
+      btn.dataset.key=o.k;
+      const keyEl=document.createElement('span');
+      keyEl.className='opt-key'; keyEl.textContent=o.k;
+      const txtEl=document.createElement('span');
+      txtEl.textContent=o.t;
+      btn.appendChild(keyEl); btn.appendChild(txtEl);
+      btn.addEventListener('click',function(){ submitAnswer(o.k); });
+      optList.appendChild(btn);
+    });
+    card.appendChild(optList);
+
+    const resEl=document.createElement('div');
+    resEl.id='quizResult'; card.appendChild(resEl);
+  }catch(e){
+    console.error('[loadQuiz]',e);
+    card.innerHTML='<div style="font-size:13px;color:var(--text3)">퀴즈 로드 실패</div>';
+  }
+}
+
+
+async function submitAnswer(ans){
+  if(!quizData)return;
+  try{
+    const r=await fetch(API_BASE+'/quiz/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:Number(userId),quiz_id:quizData.quiz_id,answer:ans})});
+    const d=await r.json();
+    document.querySelectorAll('.opt-btn').forEach(btn=>{
+      btn.disabled=true;
+      if(btn.dataset.key===d.correct_answer&&!d.correct)btn.classList.add('reveal');
+      if(btn.dataset.key===ans&&d.correct)btn.classList.add('correct');
+      if(btn.dataset.key===ans&&!d.correct&&!d.already)btn.classList.add('wrong');
+      if(btn.dataset.key===d.correct_answer&&d.correct)btn.classList.add('correct');
+    });
+    const res=document.getElementById('quizResult');
+    if(d.already)res.innerHTML='<div class="result-box done">오늘 이미 참여했습니다.</div>';
+    else if(d.correct)res.innerHTML='<div class="result-box ok">정답! +'+d.reward.toLocaleString()+'원 지급</div>';
+    else res.innerHTML='<div class="result-box fail">틀렸습니다. 정답은 '+d.correct_answer+'번입니다.</div>';
+    if(d.seed_money)document.getElementById('navSeed').textContent='₩'+Number(d.seed_money).toLocaleString();
+  }catch(e){console.error(e);}
+}
+loadPortfolio();
+loadQuiz();
+
+</script>
+</body>
+</html>

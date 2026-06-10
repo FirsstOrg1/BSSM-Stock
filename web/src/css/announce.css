@@ -1,0 +1,71 @@
+/* ================================================
+   BSSM Stock — 공시 (announce.html)
+   ================================================ */
+
+.today-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.today-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.today-card-title {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  margin-bottom: 12px;
+}
+
+.event-item {
+  font-size: 13px;
+  color: var(--text);
+  padding: 8px 12px;
+  background: var(--bg3);
+  border-radius: 7px;
+  margin-bottom: 6px;
+}
+
+.meal-item    { margin-bottom: 10px; }
+.meal-type    { font-size: 12px; color: var(--text2); font-weight: 600; margin-bottom: 8px; }
+.meal-menu    { font-size: 12px; color: var(--text2); line-height: 1.8; }
+
+.ann-item {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.ann-tag {
+  font-size: 10px;
+  color: var(--text3);
+  border: 1px solid var(--line2);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ann-tag.EVENT   { color: var(--up); border-color: rgba(239,68,68,0.3); }
+.ann-tag.CIRCUIT { color: var(--up); border-color: rgba(239,68,68,0.4); background: var(--up-bg); }
+.ann-tag.DIVIDEND{ color: #22c55e;   border-color: rgba(34,197,94,0.3); }
+.ann-tag.SYSTEM  { color: var(--dn); border-color: rgba(59,130,246,0.3); }
+
+.ann-body        { flex: 1; }
+.ann-title-text  { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.ann-content     { font-size: 12px; color: var(--text2); line-height: 1.6; }
+.ann-time        { font-size: 11px; color: var(--text3); margin-top: 5px; }

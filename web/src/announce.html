@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BSSM Stock — 공시</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+<link rel="stylesheet" href="../css/common.css">
+<link rel="stylesheet" href="../css/announce.css">
+</head>
+<body>
+<nav>
+  <div class="nav-logo">BSSM STOCK</div>
+  <div class="nav-links"><a href="index.html">전광판</a><a href="trade.html">거래소</a><a href="mypage.html">내 자산</a><a href="ranking.html">랭킹</a><a href="quiz.html">퀴즈</a><a href="announce.html" class="active">공시</a></div>
+  <div class="nav-right">
+    <span class="nav-status"><span class="nav-status-dot" id="statusDot"></span><span id="marketStatus">거래중</span></span>
+    <span class="nav-user"><strong id="navStudentId">-</strong> · <strong id="navName">-</strong></span>
+    <span class="nav-seed" id="navSeed">₩-</span>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">라이트</button>
+    <button class="btn-logout" onclick="logout()">로그아웃</button>
+  </div>
+</nav>
+<div class="page-wrap">
+  <div class="page-title">공시 게시판</div>
+  <div class="today-grid">
+    <div class="today-card">
+      <div class="today-card-title">오늘의 학사일정</div>
+      <div id="todayEvents"><div style="font-size:13px;color:var(--text3)">불러오는 중...</div></div>
+    </div>
+    <div class="today-card">
+      <div class="today-card-title">오늘의 급식</div>
+      <div id="todayMeals"><div style="font-size:13px;color:var(--text3)">불러오는 중...</div></div>
+    </div>
+  </div>
+  <div class="page-title" style="font-size:16px;margin-bottom:16px;">최근 공시</div>
+  <div id="annList"><div style="font-size:13px;color:var(--text3);padding:20px 0">불러오는 중...</div></div>
+</div>
+<script src="./js/nav.js"></script>
+<script>
+
+function toggleTheme(){
+  const h=document.documentElement;
+  const d=h.getAttribute("data-theme")==="dark";
+  h.setAttribute("data-theme",d?"light":"dark");
+  document.getElementById("themeBtn").textContent=d?"다크":"라이트";
+  localStorage.setItem("theme",d?"light":"dark");
+}
+(function(){
+  const s=localStorage.getItem("theme")||"dark";
+  document.documentElement.setAttribute("data-theme",s);
+  const b=document.getElementById("themeBtn");
+  if(b)b.textContent=s==="dark"?"라이트":"다크";
+})();
+
+
+async function loadStatus(){
+  try{
+    const r=await fetch(API_BASE+'/market/status');
+    const d=await r.json();
+    const evEl=document.getElementById('todayEvents');
+    const mealEl=document.getElementById('todayMeals');
+    if(!d.events.length&&!d.holidays.length){
+      evEl.innerHTML='<div style="font-size:13px;color:var(--text3)">오늘 특별 일정 없음</div>';
+    }else{
+      const hItems=d.holidays.map(e=>'<div class="event-item" style="color:var(--up)">🔴 '+e.name+'</div>');
+      const eItems=d.events.map(e=>'<div class="event-item">📌 '+e.name+'</div>');
+      evEl.innerHTML=[...hItems,...eItems].join('');
+    }
+    if(!d.meals.length){
+      mealEl.innerHTML='<div style="font-size:13px;color:var(--text3)">급식 정보 없음</div>';
+    }else{
+      const mealHtml = d.meals.map(m=>{
+      const items = m.menu.split(',').map(x=>x.trim()).filter(Boolean);
+      return '<div class="meal-item">'
+        +'<div class="meal-type">'+m.type+'<span style="float:right;font-weight:400">'+m.kcal+'kcal</span></div>'
+        +'<div class="meal-menu">'+items.map(item=>'<span style="display:inline-block;padding:2px 8px;margin:2px 3px 2px 0;background:var(--bg2);border:1px solid var(--line2);border-radius:4px;font-size:12px;">'+item+'</span>').join('')+'</div>'
+        +'</div>';
+    }).join('');
+    mealEl.innerHTML = mealHtml;
+    }
+  }catch{
+    document.getElementById('todayEvents').innerHTML='<div style="font-size:13px;color:var(--text3)">API 연결 실패</div>';
+  }
+}
+async function loadAnn(){
+  try{
+    const r=await fetch(API_BASE+'/announcements');
+    const list=await r.json();
+    const el=document.getElementById('annList');
+    if(!list.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:20px 0">공시 없음</div>';return;}
+    el.innerHTML='';
+    list.forEach(a=>{
+      const t=new Date(a.created_at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+      const div=document.createElement('div');
+      div.className='ann-item';
+      const stock=a.ticker_name?'<span style="font-size:11px;color:var(--text3)"> ['+a.ticker_name+']</span>':'';
+      div.innerHTML='<span class="ann-tag '+a.ann_type+'">'+a.ann_type+'</span><div class="ann-body"><div class="ann-title-text">'+a.title+stock+'</div><div class="ann-content">'+a.content+'</div><div class="ann-time">'+t+'</div></div>';
+      el.appendChild(div);
+    });
+  }catch(e){console.error(e);}
+}
+loadStatus();loadAnn();
+setInterval(loadAnn,30000);
+
+</script>
+</body>
+</html>
