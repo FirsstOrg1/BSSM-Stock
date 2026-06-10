@@ -50,7 +50,7 @@ services:
       dockerfile: web/Dockerfile
     container_name: bssm-web
     ports:
-      - "77:80"
+      - "70:80"
     depends_on:
       - api
     networks:
