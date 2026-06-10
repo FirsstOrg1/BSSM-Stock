@@ -2,7 +2,7 @@ SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
 USE study;
 
--- 1. 유저
+-- 1. 유저2
 CREATE TABLE IF NOT EXISTS user (
   user_id        BIGINT AUTO_INCREMENT PRIMARY KEY,
   student_id     VARCHAR(10)  NOT NULL UNIQUE COMMENT '학번 (학생) 또는 admin',
