@@ -119,7 +119,7 @@ volRatio = min(총거래량 / 발행주식수, 10%)
 ## 디렉토리 구조
 
 ```
-tutorial/
+BSSM Stock/
 ├── docker-compose.yml
 ├── .gitignore
 ├── README.md
