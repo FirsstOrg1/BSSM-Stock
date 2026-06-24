@@ -115,20 +115,20 @@ volRatio = min(총거래량 / 발행주식수, 10%)
 | `stock_request` | request_id, user_id, ticker_name, market, sector, base_price, total_shares, reason, status, reject_reason |
 
 ---
-user: 회원 정보 및 자산.
-stock: 종목 마스터.
-price_history: 가격 이력.
-trade_log: 체결 내역.
-holding: 보유 주식.
-order_book: 예약 주문.
-announcement: 공지사항 및 이벤트 알림.
-dividend_log: 배당 지급 이력.
-attend_log: 출석 및 보너스 지급 이력.
-quiz: 데일리 퀴즈 문제.
-quiz_answer: 퀴즈 응답 이력.
-circuit_log: 서킷브레이커 발동 이력.
-inquiry: 문의 게시판.
-stock_request: 종목 상장 신청.
+user: 회원 정보 및 자산.<br>
+stock: 종목 마스터.<br>
+price_history: 가격 이력.<br>
+trade_log: 체결 내역.<br>
+holding: 보유 주식.<br>
+order_book: 예약 주문.<br>
+announcement: 공지사항 및 이벤트 알림.<br>
+dividend_log: 배당 지급 이력.<br>
+attend_log: 출석 및 보너스 지급 이력.<br>
+quiz: 데일리 퀴즈 문제.<br>
+quiz_answer: 퀴즈 응답 이력.<br>
+circuit_log: 서킷브레이커 발동 이력.<br>
+inquiry: 문의 게시판.<br>
+stock_request: 종목 상장 신청.<br>
 
 <br>
 
